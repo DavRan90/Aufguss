@@ -1,0 +1,8 @@
+﻿.monthly-today {
+    font-weight: bolder;
+}
+.monthly-task {
+    white-space: normal !important;
+    word-break: break-word;
+    line-height: 1.2;
+}

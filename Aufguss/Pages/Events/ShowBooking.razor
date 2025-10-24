@@ -1,0 +1,222 @@
+﻿@page "/Booking/{id:int}"
+@using System.Text.Json.Nodes
+
+<div class="row mb-5">
+    <div class="col-lg-8">
+        <h1 class=mb-5>Bokning @Id</h1>
+
+        @if (booking == null)
+        {
+            <p><em>Laddar...</em></p>
+        }
+
+        else
+        {
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Id</label>
+                <div class="col-md-8">
+                    <input class="form-control-plaintext" readonly value="@Id">
+                </div>
+            </div>
+
+            @* <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Kön</label>
+
+                <div class="col-md-8">
+                    <div class="row gap-2 gap-md-1">
+                        <div class="col-12 col-md-6 d-flex align-items-center">
+                            <input type="radio"
+                                   checked="@(evnt.Gender == Gender.Male)"
+                                   name="Gender"
+                                   @onchange="@(() => EventDtoData.Gender = Gender.Male)" />
+                            <label class="btn btn-primary ms-2">Herrar</label>
+                        </div>
+
+                        <div class="col-12 col-md-6 d-flex align-items-center">
+                            <input type="radio"
+                                   checked="@(EventDtoData.Gender == Gender.Female)"
+                                   name="Gender"
+                                   @onchange="@(() => EventDtoData.Gender = Gender.Female)" />
+                            <label class="btn btn-danger ms-2">Damer</label>
+                        </div>
+                    </div>
+                </div>
+            </div> *@
+
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Passnamn</label>
+                <div class="col-md-8">
+                    <p class="form-control">@evnt.Title</p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Datum/tid</label>
+                <div class="col-md-8">
+                    <p class="form-control">@evnt.Start.ToString("dd/MM-yyyy HH:mm")</p>
+                </div>
+            </div>
+
+            <h3 class="mb-5">Gästuppgifter</h3>
+
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Namn</label>
+                <div class="col-md-8">
+                    <p class="form-control">@booking.Name</p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Email</label>
+                <div class="col-md-8">
+                    <p class="form-control">@booking.Email</p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Telefon</label>
+                <div class="col-md-8">
+                    <p class="form-control">@booking.Tel</p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Bokad</label>
+                <div class="col-md-8">
+                    <p class="form-control">@booking.BookedAt.ToString("dd/MM-yyyy HH:mm")</p>
+                </div>
+            </div>
+            @if(booking.Unbooked)
+            {
+                <div class="row mb-3">
+                    <label class="col-md-4 col-form-label">Avbokad</label>
+                    <div class="col-md-8">
+                        <p class="form-control">@booking.UnbookedAt?.ToString("dd/MM-yyyy HH:mm")</p>
+                    </div>
+                </div>
+            }
+
+
+            <div class="row">
+                @if(booking.Unbooked)
+                {
+                    <div class="offset-md-4 col-md-4 d-grid">
+                        <button class="btn btn-primary">Omboka</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="offset-md-4 col-md-4 d-grid">
+                        <button class="btn btn-danger" @onclick="async () => await Unbook(booking.Id)">Avboka</button>
+                    </div>
+                }
+                <div class="col-md-4 d-grid">
+                    <a class="btn btn-outline-primary" href="/Dina_bokningar">Avbryt</a>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject IJSRuntime JS
+@inject SweetAlertService Swal
+@inject AuthenticationStateProvider AuthProvider
+@inject IBookingService BookingService
+@inject IEventService EventService
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    public Booking? booking { get; set; }
+
+    public BookingDto BookingDtoData { get; set; } = new();
+
+    public Event? evnt { get; set; }
+
+    public JsonNode Errors { get; set; } = new JsonObject();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            // await LoadAuthAndCurrentUser();
+            await LoadEventAndBookings();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error loading data: " + ex.Message);
+        }
+    }
+
+    private async Task LoadEventAndBookings()
+    {
+        // var allBookings = await Http.GetFromJsonAsync<List<Booking>>("api/Bookings/");
+        // var allEvents = await Http.GetFromJsonAsync<List<Event>>("api/Events/");
+        var allBookings = await BookingService.GetBookingsAsync();
+        var allEvents = await EventService.GetEventsAsync();
+        booking = allBookings?.Where(b => b.Id == Id).SingleOrDefault();
+        evnt = allEvents?.Where(e => e.Id == booking?.EventId).SingleOrDefault();
+    }
+
+    private async Task Unbook(int id)
+    {
+        var result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Bekräfta avbokning",
+                Text = $"Ta bort bokning med ID {id}?",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Ja, ta bort",
+                CancelButtonText = "Nej, ta inte bort",
+            });
+        if (result.IsConfirmed)
+        {
+            try
+            {
+                await BookingService.UnbookAsync(id);
+                await JS.InvokeVoidAsync("Swal.fire", "Avbokad", $"Du är nu avbokad från {evnt.Title}", "success");
+                NavManager.NavigateTo($"/Dina_bokningar");
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception: " + ex.Message);
+                await JS.InvokeVoidAsync("Swal.fire", "Fel", $"Avbokningen misslyckades", "error");
+            }
+
+            // var response = await Http.PutAsync("api/Bookings/Unbook/" + id, null);
+
+            // if (response.IsSuccessStatusCode)
+            // {
+            //     var res = await Swal.FireAsync(new SweetAlertOptions
+            //         {
+            //             Title = "Avbokad",
+            //             Text = $"Bokning med id {id} är avbokad",
+            //             Icon = SweetAlertIcon.Warning,
+            //         });
+            //     // Navigate to page
+            //     NavManager.NavigateTo($"/Events/Edit/{evnt.Id}");
+            // }
+
+            // else
+            // {
+            //     var strResponse = await response.Content.ReadAsStringAsync();
+            //     Console.WriteLine("Json Response: \n" + strResponse);
+
+            //     try
+            //     {
+            //         var jsonResponse = JsonNode.Parse(strResponse);
+            //         Errors = jsonResponse?["errors"] ?? new JsonObject();
+            //     }
+            //     catch (Exception ex)
+            //     {
+            //         Console.WriteLine("Exception: " + ex.Message);
+            //     }
+            // }
+        }
+
+    }
+}

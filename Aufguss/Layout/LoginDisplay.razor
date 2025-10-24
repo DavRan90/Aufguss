@@ -1,0 +1,30 @@
+﻿@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthProvider
+@inject IJSRuntime JS
+
+<AuthorizeView>
+    <Authorized>
+        @* Hej, @context.User.Identity?.Name! *@
+        Hej @context.User.FindFirst("firstName")?.Value
+        @* <button class="nav-link btn btn-link" @onclick="BeginLogOut">Logga ut</button> *@
+    </Authorized>
+    <NotAuthorized>
+        @* <a href="login">Logga in</a> *@
+    </NotAuthorized>
+</AuthorizeView>
+
+@code{
+    public async Task BeginLogOut()
+    {
+        // 1. Remove token
+        await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+
+        // 2. Notify system
+        ((Services.CustomAuthStateProvider)AuthProvider).NotifyUserLogout();
+
+        // 3. Redirect
+        Navigation.NavigateTo("/login", forceLoad: true);
+        // Navigation.NavigateToLogout("authentication/logout");
+    }
+}

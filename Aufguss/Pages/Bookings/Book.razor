@@ -1,0 +1,460 @@
+﻿@page "/BokaAufguss/Book/{id:int}"
+@using System.Text.Json.Nodes
+@using Aufguss.Models
+
+<div class="row mb-5">
+    <div class="col-lg-8">
+
+
+        @if (eventData == null)
+        {
+            <p><em>Laddar...</em></p>
+        }
+
+        else if(eventData.Hidden)
+        {
+            <div class="alert alert-danger" role="alert">
+                ⚠️ Passet är dolt.
+            </div>
+        }
+        else
+        {
+            <h1 class=mb-5>@EventDtoData.Title</h1>
+            @* if (eventData.Start < DateTime.Now)
+            {
+                <div class="alert alert-danger" role="alert">
+                    ⚠️ Passet har redan startat och/eller avslutats.
+                </div>
+                <h3>Passet har redan startat och/eller avslutats</h3>
+            } *@
+            @* else
+            { *@
+            if (CurrentUser?.Gender != eventData.Gender && CurrentUser != null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    ⚠️ Passet är skapat för ett annat kön än ditt valda kön.
+                </div>
+            }
+            if (SpotsRemaining <= 0)
+            {
+                <div class="alert alert-danger" role="alert">
+                    ⚠️ Passet är fullbokat, du kan boka in dig på reservlistan nedan.
+                </div>
+            }
+            else if (SpotsRemaining > 0 && SpotsRemaining < 2)
+            {
+                <div class="alert alert-warning" role="alert">
+                    ⚠️ Endast @SpotsRemaining plats kvar.
+                </div>
+            }
+
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Id</label>
+                <div class="col-md-8">
+                    <input class="form-control-plaintext" readonly value="@Id">
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Kön</label>
+                <div class="col-md-8">
+                    @if (EventDtoData.Gender == Gender.Male)
+                    {
+                        <p class="form-control bg-primary-subtle">Herrar</p>
+                    }
+                    else
+                    {
+                        <p class="form-control bg-danger-subtle">Damer</p>
+                    }
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Titel</label>
+                <div class="col-md-8">
+                    <p class="form-control bg-body-tertiary">@EventDtoData.Title</p>
+                    @* <input class="form-control" @bind="EventDtoData.Title" readonly> *@
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Platser bokade</label>
+                <div class="col-md-8">
+                    @{
+                        int remaining = SpotsRemaining;
+                        int total = eventData.MaxSlots;
+                        int booked = total - remaining;
+                        int percent = (int)(((double)booked / total) * 100);
+
+                        string progressColor = percent switch
+                        {
+                            >= 100 => "bg-danger",
+                            >= 70 => "bg-warning",
+                            _ => "bg-success"
+                        };
+                    }
+
+                    <div class="progress position-relative" style="height: 30px;">
+                        <!-- Colored fill bar -->
+                        <div class="progress-bar @progressColor"
+                        role="progressbar"
+                        style="width: @percent%;"
+                        aria-valuenow="@percent"
+                        aria-valuemin="0"
+                        aria-valuemax="100">
+                        </div>
+
+                        <!-- Centered text on top of the bar -->
+                        <span class="position-absolute top-50 start-50 translate-middle text-black fw-bold">
+                            @booked / @total
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Beskrivning</label>
+                <div class="col-md-8">
+                    <p class="form-control" style="white-space: pre-wrap;">@EventDtoData.Description</p>
+                    @* <textarea class="form-control" @bind="EventDtoData.Description" readonly></textarea> *@
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-md-4 col-form-label">Starttid</label>
+                <div class="col-md-8">
+                    <p class="form-control">@EventDtoData.Start.ToString("dd/MM-yyyy HH:mm")</p>
+                    @* <input type="datetime-local" class="form-control" @bind="EventDtoData.Start" readonly> *@
+                </div>
+            </div>
+            @if (EventDtoData.End != null)
+            {
+                <div class="row mb-3">
+                    <label class="col-md-4 col-form-label">Sluttid</label>
+                    <div class="col-md-8">
+                        <p class="form-control">@EventDtoData.End?.ToString("dd/MM-yyyy HH:mm")</p>
+                    </div>
+                </div>
+            }
+
+            if (eventData.Start < DateTime.Now)
+            {
+                <div class="alert alert-danger" role="alert">
+                    ⚠️ Passet har redan startat och/eller avslutats.
+                </div>
+            }
+            if (CurrentUserIsBooked)
+            {
+                <div class="alert alert-danger" role="alert">
+                    ⚠️ Du är redan bokad till detta pass.
+                </div>
+            }
+            if (CurrentUser?.Gender == eventData.Gender && eventData.Start > DateTime.Now && !CurrentUserIsBooked || CurrentUser == null && eventData.Start > DateTime.Now)
+            {
+                <div>
+                    <h2 class="mt-4 mb-4">Kontaktuppgifter</h2>
+                </div>
+
+                <div class="row mb-3">
+                    <label class="col-md-4 col-form-label">Namn</label>
+                    <div class="col-md-8">
+                        @if (CurrentUser == null)
+                        {
+                            <input class="form-control" type="text" @bind="BookingDtoData.Name">
+                        }
+                        else
+                        {
+                            <p class="form-control bg-body-tertiary">@BookingDtoData.Name</p>
+                        }
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label class="col-md-4 col-form-label">E-post</label>
+                    <div class="col-md-8">
+                        @if (CurrentUser == null)
+                        {
+                            <input class="form-control" type="email" @bind="BookingDtoData.Email">
+                        }
+                        else
+                        {
+                            <p class="form-control bg-body-tertiary">@BookingDtoData.Email</p>
+                        }
+
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label class="col-md-4 col-form-label">Telefon</label>
+                    <div class="col-md-8">
+                        @if (CurrentUser == null)
+                        {
+                            <input class="form-control" type="tel" @bind="BookingDtoData.Tel">
+                        }
+                        else
+                        {
+                            <p class="form-control bg-body-tertiary">@BookingDtoData.Tel</p>
+                        }
+
+                    </div>
+                </div>
+                if(CurrentUser == null)
+                {
+                    <div class="row mb-3">
+                        <div class="col-md-8 offset-md-4 bg-danger-subtle rounded">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="gridCheck5">
+                                <label class="form-check-label" for="gridCheck5">
+                                    Jag godkänner lagring av personuppgifter
+                                </label>
+                                <span class="ms-1" data-bs-toggle="tooltip" data-bs-trigger="click" title="Vi behöver lagra dina angivna uppgifter i bokningssyfte">
+                                    <i class="bi bi-info-circle text-secondary" @onclick:stopPropagation></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (EventDtoData.AllowFriendBooking && CurrentUser.AufgussFriendId != null)
+                {
+                    <div class="row mb-3">
+                        <div class="col-md-8 offset-md-4 bg-danger-subtle rounded">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="gridCheck1" @bind="BookFriend">
+                                <label class="form-check-label" for="gridCheck1">
+                                    Boka in min aufgusskompis också
+                                </label>
+                                <span class="ms-1" data-bs-toggle="tooltip" data-bs-trigger="click" title="Om du har en aufgusskompis kan även denne bokas in av dig">
+                                    <i class="bi bi-info-circle text-secondary" @onclick:stopPropagation></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+
+
+
+
+
+
+                <div class="row">
+                    <div class="offset-md-4 col-md-4 d-grid">
+                        <button class="btn @GetButtonClass()"
+                        @onclick="SaveBooking">
+                            @GetButtonText()
+                        </button>
+                    </div>
+                    <div class="col-md-4 d-grid">
+                        <a class="btn btn-outline-primary" href="/BokaAufguss">Avbryt</a>
+                    </div>
+                    @* @if (SpotsRemaining > 0)
+                    {
+                        <div class="offset-md-4 col-md-4 d-grid">
+                            <button class="btn btn-primary" @onclick="SaveBooking">Boka</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="offset-md-4 col-md-4 d-grid">
+                            <button class="btn btn-warning" @onclick="async () => await ReserveBooking(true)">Reservlista</button>
+                        </div>
+                    }
+                    <div class="col-md-4 d-grid">
+                        <a class="btn btn-outline-primary" href="/Bookings">Avbryt</a>
+                    </div> *@
+                </div>
+            }
+            @* } *@
+
+        }
+    </div>
+</div>
+
+
+@inject HttpClient Http
+@inject NavigationManager navManager
+@inject IJSRuntime JS
+@inject SweetAlertService Swal
+@inject AuthenticationStateProvider AuthProvider
+@inject IEventService EventService
+@inject IBookingService BookingService
+@inject IUserService UserService
+
+@code {
+    private bool BookFriend = false;
+    private List<UserWithRolesDto>? Users;
+    private UserWithRolesDto? CurrentUser;
+    private UserWithRolesDto? AufgussFriend;
+
+    private bool CurrentUserIsBooked = false;
+
+    public int SpotsRemaining { get; set; }
+    [Parameter]
+    public int Id { get; set; }
+
+    public List<Booking> Bookings { get; set; } = new();
+
+    public Booking? booking { get; set; }
+    public BookingDto BookingDtoData { get; set; } = new();
+    public BookingDto FriendBookingDtoData { get; set; } = new();
+
+    public Event? eventData { get; set; } = null;
+    public EventDto EventDtoData { get; set; } = new();
+    public JsonNode Errors { get; set; } = new JsonObject();
+
+    private string GetButtonClass()
+    {
+        return SpotsRemaining > 0 ? "btn-primary" : "btn-warning";
+    }
+
+    private string GetButtonText()
+    {
+        return SpotsRemaining > 0 ? "Boka" : "Reservlista";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        eventData = await EventService.GetEventByIdAsync(Id);
+        if (eventData != null)
+        {
+            await LoadAuthAndCurrentUser();
+            await LoadEventAndBookings();
+            
+        }
+        // try
+        // {
+        //     await LoadAuthAndCurrentUser();
+        //     await LoadEventAndBookings();
+        // }
+        // catch (Exception ex)
+        // {
+        //     Console.WriteLine("Error loading data: " + ex.Message);
+        // }
+    }
+
+    private async Task LoadEventAndBookings()
+    {
+        // eventData = await Http.GetFromJsonAsync<Event>($"api/Events/{Id}");
+        eventData = await EventService.GetEventByIdAsync(Id);
+
+        EventDtoData = new EventDto
+            {
+                Title = eventData?.Title ?? "Fel",
+                Description = eventData?.Description ?? "",
+                Start = eventData?.Start ?? DateTime.Now,
+                End = eventData?.End,
+                AllDay = eventData?.AllDay ?? false,
+                MaxSlots = eventData?.MaxSlots ?? 0,
+                Recurring = eventData?.Recurring ?? false,
+                Gender = eventData?.Gender ?? Gender.Male,
+                AllowFriendBooking = eventData?.AllowFriendBooking ?? true,
+            };
+
+        // var allBookings = await Http.GetFromJsonAsync<List<Booking>>("api/Bookings/");
+        var allBookings = await BookingService.GetBookingsAsync();
+        Bookings = allBookings?.Where(b => b.EventId == Id).ToList() ?? new();
+
+        SpotsRemaining = EventDtoData.MaxSlots - Bookings
+            .Count(b => !b.Unbooked && !b.Reserve);
+
+        var userId = BookingDtoData.UserId;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            CurrentUserIsBooked = Bookings
+                .Any(b => b.UserId == userId && !b.Unbooked);
+        }
+    }
+
+    private async Task LoadAuthAndCurrentUser()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var loggedInUser = authState.User;
+
+        if (loggedInUser.Identity is not null && loggedInUser.Identity.IsAuthenticated)
+        {
+            var userId = loggedInUser.FindFirst("sub")?.Value;
+
+            BookingDtoData.Name = loggedInUser.FindFirst("fullName")?.Value ?? "";
+            BookingDtoData.Email = loggedInUser.FindFirst("email")?.Value ?? "";
+            BookingDtoData.Tel = loggedInUser.FindFirst("phone_number")?.Value ?? "";
+            BookingDtoData.UserId = userId ?? "";
+
+            // Users ??= await Http.GetFromJsonAsync<List<UserWithRolesDto>>("api/auth/users");
+            Users = await UserService.GetUsersAsync();
+
+            CurrentUser = Users?.FirstOrDefault(u => u.Id == userId);
+            if (CurrentUser.AufgussFriendId != null)
+            {
+                AufgussFriend = Users?.FirstOrDefault(u => u.Id == CurrentUser.AufgussFriendId);
+            }
+            FriendBookingDtoData.Name = (AufgussFriend?.FirstName + " " + AufgussFriend?.SurName) ?? "";
+            FriendBookingDtoData.Email = AufgussFriend?.Email ?? "";
+            FriendBookingDtoData.Tel = AufgussFriend?.PhoneNumber ?? "";
+            FriendBookingDtoData.UserId = AufgussFriend?.Id ?? "";
+        }
+    }
+
+    private async Task SaveBooking()
+    {
+        BookingDtoData.EventId = Id;
+        if(BookFriend)
+        {
+            FriendBookingDtoData.EventId = Id;
+            try
+            {
+                await BookingService.AddBookingAsync(BookingDtoData);
+                await BookingService.AddBookingAsync(FriendBookingDtoData);
+                await JS.InvokeVoidAsync("Swal.fire", "Bokning tillagd", $"Du och {FriendBookingDtoData.Name} är nu inbokade till passet!", "success");
+                navManager.NavigateTo("/Dina_bokningar");
+            }
+        catch(Exception ex)
+        {
+                Console.WriteLine($"Error booking: {ex.Message}");
+                await JS.InvokeVoidAsync("Swal.fire", "Fel", ex.Message, "error");
+            }
+        }
+        else
+        {
+            try
+            {
+                await BookingService.AddBookingAsync(BookingDtoData);
+                await JS.InvokeVoidAsync("Swal.fire", "Bokning tillagd", $"Du är nu inbokad till passet!", "success");
+                navManager.NavigateTo("/Dina_bokningar");
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Error booking: {ex.Message}");
+                await JS.InvokeVoidAsync("Swal.fire", "Fel", ex.Message, "error");
+            }
+        }
+    }
+
+    private async Task ReserveBooking(bool reserve)
+    {
+        BookingDtoData.EventId = Id;
+        BookingDtoData.Reserve = reserve;
+        var response = await Http.PostAsJsonAsync("api/Bookings", BookingDtoData);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("Swal.fire", "Reservplats tillagd", "Du är nu inlagd som reserv!", "success");
+            navManager.NavigateTo("/Bookings");
+        }
+
+        else
+        {
+            var strResponse = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("Json Response: \n" + strResponse);
+
+            try
+            {
+                var jsonResponse = JsonNode.Parse(strResponse);
+                Errors = jsonResponse?["errors"] ?? new JsonObject();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception: " + ex.Message);
+            }
+        }
+    }
+}

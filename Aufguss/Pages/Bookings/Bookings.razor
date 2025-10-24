@@ -1,0 +1,175 @@
+﻿@page "/Bookings"
+@using Aufguss.Models
+
+<h3>Bokningar</h3>
+
+@if (events == null)
+{
+    <p><em>Laddar...</em></p>
+}
+else
+{
+    <table class="table mb-5">
+        <thead>
+            <tr>
+                @* <th>ID</th> *@
+                <th>Kön</th>
+                <th>Titel</th>
+                @* <th>Beskrivning</th> *@
+
+                <th>Platser</th>
+                <th>Datum</th>
+                @* <th>Återkommande</th> *@
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var evt in events)
+            {
+                if(evt.Hidden == false)
+                {
+                    <tr style="cursor: pointer;"
+                    @onclick="@(() => NavManager.NavigateTo($"/Bookings/Book/{evt.Id}"))">
+                        @* <td>@evt.Id</td> *@
+                        <td>
+                            @if (evt.Gender == 0)
+                            {
+                                <span class="badge rounded-pill text-bg-primary p-2">Herrar</span>
+                            }
+                            else
+                            {
+                                <span class="badge rounded-pill text-bg-danger p-2">Damer</span>
+                            }
+                        </td>
+                        <td>@evt.Title</td>
+                        @* <td>@evt.Description</td> *@
+                        <td style="min-width: 5px;">
+                            @{
+                                int remaining = SpotsRemaining(evt.Id);
+                                int total = evt.MaxSlots;
+                                int booked = total - remaining;
+                                int percent = (int)(((double)booked / total) * 100);
+
+                                string progressColor = percent switch
+                                {
+                                    >= 100 => "bg-danger",
+                                    >= 70 => "bg-warning",
+                                    _ => "bg-success"
+                                };
+                            }
+
+                            <div class="progress position-relative" style="height: 20px;">
+                                <!-- Colored fill bar -->
+                                <div class="progress-bar @progressColor"
+                                role="progressbar"
+                                style="width: @percent%;"
+                                aria-valuenow="@percent"
+                                aria-valuemin="0"
+                                aria-valuemax="100">
+                                </div>
+
+                                <!-- Centered text on top of the bar -->
+                                <span class="position-absolute top-50 start-50 translate-middle text-black fw-bold">
+                                    @booked / @total
+                                </span>
+                            </div>
+                        </td>
+                        @* <td>
+                            @if (@SpotsRemaining(evt.Id) == 0)
+                            {
+                                <span class="badge rounded-pill text-bg-danger p-2">@SpotsRemaining(evt.Id)</span>
+                            }
+                            else if (@SpotsRemaining(evt.Id) > 0 && @SpotsRemaining(evt.Id) < 3)
+                            {
+                                <span class="badge rounded-pill text-bg-warning p-2">@SpotsRemaining(evt.Id)</span>
+                            }
+                            else
+                            {
+                                <span class="badge rounded-pill text-bg-success p-2">@SpotsRemaining(evt.Id)</span>
+                            }
+                            </td> *@
+                        <td>@evt.Start.ToString("dd/MM/yyyy | HH:mm")</td>
+                        @* <td>
+                            @if (evt.Recurring)
+                            {
+                                <span class="badge rounded-pill text-bg-success p-2">Ja</span>
+                            }
+                            else
+                            {
+                                <span class="badge rounded-pill text-bg-warning p-2">Nej</span>
+                            }
+                        </td> *@
+                        <td style="white-space:nowrap; width:10px">
+                            @* <a class="btn btn-primary btn-sm" href="/Bookings/Book/@evt.Id">
+                                Boka
+                            </a> *@
+                            <button class="btn btn-sm btn-outline-primary mb-1 mb-md-0 me-md-1"
+                            title="Boka"
+                            @onclick:stopPropagation
+                            @onclick="@(() => NavManager.NavigateTo($"/Bookings/Book/{evt.Id}"))">
+                                Boka
+                            </button>
+                        </td>
+                    </tr>
+                }
+
+            }
+        </tbody>
+    </table>
+}
+
+
+@inject HttpClient Http
+@inject SweetAlertService Swal
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavManager
+
+@code {
+    private List<UserWithRolesDto>? Users;
+    private UserWithRolesDto? CurrentUser;
+
+    private List<Event>? events;
+    private List<Booking>? bookings;
+    // public List<Event>? events { get; set; }
+    public int spotsLeft = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Users = await Http.GetFromJsonAsync<List<UserWithRolesDto>>("api/auth/users");
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var loggedInUser = authState.User;
+        var userIdString = loggedInUser.FindFirst("sub")?.Value;
+        var userGender = loggedInUser.FindFirst("gender")?.Value;
+
+        CurrentUser = Users?.Where(u => u.Id == userIdString).SingleOrDefault();
+
+        events = await Http.GetFromJsonAsync<List<Event>>("api/Events");
+        bookings = await Http.GetFromJsonAsync<List<Booking>>("api/Bookings");
+        events = events?.Where(e => e.Start > DateTime.Now).ToList();
+        if(userGender == Gender.Male.ToString())
+        {
+            events = events?.Where(e => e.Gender == Gender.Male).ToList();
+        }
+        else if (userGender == Gender.Female.ToString())
+        {
+            events = events?.Where(e => e.Gender == Gender.Female).ToList();
+        }
+    }
+
+    public int SpotsRemaining(int evtId)
+    {
+        if (events == null || bookings == null)
+            return 0;
+
+        var evt = events.SingleOrDefault(e => e.Id == evtId);
+        if (evt == null)
+            return 0;
+
+        var count = bookings.Count(b =>
+            b.EventId == evt.Id &&
+            b.Unbooked == false &&
+            b.Reserve == false);
+
+        return evt.MaxSlots - count;
+    }
+}

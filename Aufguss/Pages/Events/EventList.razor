@@ -1,0 +1,470 @@
+﻿@page "/Events"
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@using System.Globalization
+@using System.Text.Json.Nodes
+@using Aufguss.Models
+@using BlazorCalendar
+@using BlazorCalendar.Models
+@using System.Text.Json
+@using System.Text.Json.Serialization
+
+
+
+
+<h1 class="mb-3">Bokningar</h1>
+<p>Visa kalender</p>
+<input type="checkbox" @bind="ShowCalendar" />
+<p></p>
+<p></p>
+
+
+@if (evts == null)
+{
+    <p><em>Laddar...</em></p>
+}
+else
+{
+    if (!ShowCalendar)
+    {
+        <a class="btn btn-primary mb-3 me-2" href="/Events/Create">Skapa ny bokning</a>
+        <table class="table mb-5">
+            <thead>
+                <tr>
+                    <th>Kön</th>
+                    <th>Titel</th>
+                    <th>Platser</th>
+                    <th>Datum</th>
+                    <th>Dold</th>
+                    <th style="width: 80px;"></th> <!-- Icons column -->
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var evt in evts)
+                {
+                    <tr style="cursor: pointer;"
+                    @onclick="@(() => NavManager.NavigateTo($"/Events/Edit/{evt.Id}"))">
+
+                        @* <td>@evt.Id</td> *@
+                        <td>
+                            @if (evt.Gender == 0)
+                            {
+                                <span class="badge rounded-pill text-bg-primary p-2">Herrar</span>
+                            }
+                            else
+                            {
+                                <span class="badge rounded-pill text-bg-danger p-2">Damer</span>
+                            }
+                        </td>
+                        <td>@evt.Title</td>
+                        <td style="min-width: 5px;">
+                            @{
+                                int remaining = SpotsRemaining(evt.Id);
+                                int total = evt.MaxSlots;
+                                int booked = total - remaining;
+                                int percent = (int)(((double)booked / total) * 100);
+
+                                string progressColor = percent switch
+                                {
+                                    >= 100 => "bg-danger",
+                                    >= 70 => "bg-warning",
+                                    _ => "bg-success"
+                                };
+                            }
+
+                            <div class="progress position-relative" style="height: 20px;">
+                                <!-- Colored fill bar -->
+                                <div class="progress-bar @progressColor"
+                                role="progressbar"
+                                style="width: @percent%;"
+                                aria-valuenow="@percent"
+                                aria-valuemin="0"
+                                aria-valuemax="100">
+                                </div>
+
+                                <!-- Centered text on top of the bar -->
+                                <span class="position-absolute top-50 start-50 translate-middle text-black fw-bold">
+                                    @booked / @total
+                                </span>
+                            </div>
+                        </td>
+                        <td>@evt.Start.ToString("dd/MM/yyyy | HH:mm")</td>
+                        <td>
+                            @if (evt.Hidden)
+                            {
+                                <button class="btn btn-sm btn-success" @onclick:stopPropagation @onclick="async () => await SaveEvent(evt.Id)">Ja</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm btn-warning" @onclick:stopPropagation @onclick="async () => await SaveEvent(evt.Id)">Nej</button>
+                            }
+                        </td>
+                        <td class="text-nowrap">
+                            <div class="d-flex flex-column flex-md-row">
+                                <button class="btn btn-sm btn-outline-primary mb-1 mb-md-0 me-md-1"
+                                title="Ändra"
+                                @onclick:stopPropagation
+                                @onclick="@(() => NavManager.NavigateTo($"/Events/Edit/{evt.Id}"))">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                title="Ta bort"
+                                @onclick:stopPropagation
+                                @onclick="async () => await ShowAlert(evt.Id)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+
+        <div class="d-flex justify-content-center align-items-center">
+            <button class="btn btn-primary m-3" @onclick="@(() => ChangeMonth(-1))">←</button>
+            <h3 class="mx-2 text-center" style="width: 15ch;">@FirstDate.ToString("MMMM yyyy")</h3>
+            <button class="btn btn-primary m-3" @onclick="@(() => ChangeMonth(1))">→</button>
+        </div>
+        <CalendarContainer TasksList="@ModelTasks" DisplayedView="DisplayedView.Monthly" FirstDate="@FirstDate">
+            <MonthlyView TaskClick="OnTaskClick"
+            Draggable DragStart="OnDragStart"
+            DropTask="OnDragDrop"
+            DayClick="OnDayClick"
+            SaturdayColor="White"
+            SundayColor="White" />
+        </CalendarContainer>
+
+        <p class="btn btn-sm bg-primary-subtle mt-2">Herrar</p>
+        <p class="btn btn-sm bg-danger-subtle mt-2">Damer</p>
+        <p class="btn btn-sm bg-warning-subtle mt-2">Fullbokat</p>
+        <p class="btn btn-sm bg-dark-subtle mt-2">Dold</p>
+    }
+
+
+}
+
+@inject SweetAlertService Swal
+@inject NavigationManager NavManager
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject IEventService EventService
+@inject IBookingService BookingService
+@inject IUserService UserService
+
+@code {
+
+    // Calendar
+    private DateTime FirstDate = DateTime.Today;  // or whatever month you want to start
+
+    private List<Event>? evts;
+    private List<Booking>? bookings;
+
+    private BlazorCalendar.Models.Tasks[]? ModelTasks;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventsAsync();
+    }
+
+    public void ChangeMonth(int change)
+    {
+        FirstDate = FirstDate.AddMonths(change);
+        StateHasChanged();
+    }
+
+    private async Task LoadEventsAsync()
+    {
+        // evts = await Http.GetFromJsonAsync<List<Event>>("api/Events/admin");
+        // bookings = await Http.GetFromJsonAsync<List<Booking>>("api/Bookings");
+        evts = await EventService.GetEventsAsync();
+        bookings = await BookingService.GetBookingsAsync();
+
+        ModelTasks = evts.Select(evt =>
+    {
+        bool sessionFull = evt.MaxSlots == bookings.Where(b => b.EventId == evt.Id && !b.Reserve && !b.Unbooked).Count(); ;
+
+        return new BlazorCalendar.Models.Tasks
+            {
+                ID = evt.Id,
+                Caption = (evt.Gender, evt.Hidden) switch
+                {
+                    (Gender.Male, false) => "Herrar",
+                    (Gender.Female, false) => "Damer",
+                    (Gender.Male, true) => "Herrar", // Om jag behöver ett scenario för dolda
+                    (Gender.Female, true) => "Damer", // Om jag behöver ett scenario för dolda
+                    _ => "lightgray"
+                },
+                DateStart = evt.Start,
+                DateEnd = evt.Start,
+                Color = (evt.Hidden, evt.Gender, sessionFull) switch
+                {
+                    (false, Gender.Male, false) => "lightblue",
+                    (false, Gender.Female, false) => "lightpink",
+                    (false, Gender.Male, true) => "lightyellow",
+                    (false, Gender.Female, true) => "lightyellow",
+                    _ => "lightgray"
+                },
+                Comment = evt.Description
+            };
+    }).ToArray();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnTaskClick(ClickTaskParameter clickInfo)
+    {
+        var task = clickInfo.IDList;
+        NavManager.NavigateTo($"/Events/Edit/{task[0]}");
+    }
+
+    private Task OnDragStart(DragDropParameter dragStartInfo)
+    {
+        // Capture the ID of the dragged task (first one if multiple)
+        if (dragStartInfo.taskID != 0)
+        {
+            Console.WriteLine($"Drag started for task ID: {dragStartInfo.taskID}");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task OnDragDrop(DragDropParameter dropInfo)
+    {
+        if (dropInfo.taskID != 0 && ModelTasks is not null && evts is not null)
+        {
+            // Update the calendar task visually
+            var task = ModelTasks.FirstOrDefault(t => t.ID == dropInfo.taskID);
+            if (task != null)
+            {
+                task.DateStart = dropInfo.Day.Date + task.DateStart.TimeOfDay;
+                task.DateEnd = dropInfo.Day.Date + task.DateEnd.TimeOfDay;
+            }
+
+            // Find the corresponding event object (used for the API)
+            var evt = evts.FirstOrDefault(e => e.Id == dropInfo.taskID);
+            if (evt != null)
+            {
+                evt.Start = dropInfo.Day.Date + evt.Start.TimeOfDay;
+
+                try
+                {
+                    var response = await Http.PutAsJsonAsync($"api/Events/{evt.Id}", evt);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine($"Failed to update event {evt.Id}: {response.StatusCode}");
+                        // Optional: revert task if you want to undo on failure
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Event {evt.Id} updated successfully.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error updating event: {ex.Message}");
+                }
+            }
+
+            await InvokeAsync(StateHasChanged); // Refresh UI
+        }
+    }
+
+    private async Task OnDayClick(ClickEmptyDayParameter clickedDate)
+    {
+        var eventDto = new EventDto();
+        eventDto.Start = clickedDate.Day.AddDays(1);
+        string json = await JSRuntime.InvokeAsync<string>("showCreateEventAlert", eventDto);
+
+        if (!string.IsNullOrEmpty(json))
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+
+                options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)); // OR use `null` for PascalCase
+
+                var newEvent = JsonSerializer.Deserialize<EventDto>(json, options);
+                var response = await Http.PostAsJsonAsync("api/Events", newEvent);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    await JSRuntime.InvokeVoidAsync("Swal.fire", "Success", "Nytt pass tillagt!", "success");
+                    var createdEvent = await response.Content.ReadFromJsonAsync<Event>();
+
+                    // Add to evts
+                    evts?.Add(createdEvent!);
+
+                    // Add to ModelTasks so it shows up in the calendar
+                    var newTask = new Tasks
+                        {
+                            ID = createdEvent.Id,
+                            Caption = (createdEvent.Gender, createdEvent.Hidden) switch
+                            {
+                                (Gender.Male, false) => "[Herrar] " + createdEvent.Title,
+                                (Gender.Female, false) => "[Damer] " + createdEvent.Title,
+                                (Gender.Male, true) => "[Herrar] " + createdEvent.Title + " [Dold]",
+                                (Gender.Female, true) => "[Damer] " + createdEvent.Title + " [Dold]",
+                                _ => "lightgray"
+                            },
+                            DateStart = createdEvent.Start,
+                            DateEnd = createdEvent.Start,
+                            Color = (createdEvent.Gender, createdEvent.Hidden) switch
+                            {
+                                (Gender.Male, false) => "#7aa7c7",
+                                (Gender.Female, false) => "#d58db5",
+                                (Gender.Male, true) => "#e3f2fd",     // lighter blue for hidden Man
+                                (Gender.Female, true) => "#fce4ec",   // lighter pink for hidden Woman
+                                _ => "lightgray"
+                            },
+
+                            Comment = createdEvent.Description
+                        };
+
+                    // Add to calendar tasks and refresh
+                    ModelTasks = ModelTasks?.Append(newTask).ToArray();
+                    await InvokeAsync(StateHasChanged);
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Failed to create event.");
+                }
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"Error deserializing booking: {ex.Message}");
+            }
+        }
+    }
+
+
+
+
+    public JsonNode Errors { get; set; } = new JsonObject();
+
+    [Parameter]
+    public EventCallback<bool> ValueChanged { get; set; }
+
+    private bool _showCalendar;
+    [Parameter]
+    public bool ShowCalendar
+    {
+        get { return _showCalendar; }
+        set
+        {
+            if (_showCalendar != value)
+            {
+                _showCalendar = value;
+            }
+            ValueChanged.InvokeAsync(_showCalendar);
+        }
+    }
+
+    // public int StartDay { get; set; } = 1;
+
+
+
+    private async Task DeleteEvent(int id)
+    {
+        // await Http.DeleteAsync("api/Events/" + id);
+        // evts = await Http.GetFromJsonAsync<List<Event>>("api/Events");
+        await EventService.RemoveEventAsync(id);
+        evts = await EventService.GetEventsAsync();
+        await LoadEventsAsync();
+    }
+
+    private async Task ShowAlert(int id)
+    {
+        var result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Bekräfta borttagning",
+                Text = $"Vill du ta bort sittning med ID {id}?",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Ja, ta bort",
+                CancelButtonText = "Nej, ta inte bort",
+            });
+        if (result.IsConfirmed)
+        {
+            await DeleteEvent(id);
+        }
+    }
+
+    private async Task SaveEvent(int id)
+    {
+        var evt = evts.SingleOrDefault(e => e.Id == id);
+        if (evt == null) return;
+
+        if (!evt.Hidden && bookings.Count(b => b.EventId == evt.Id) < 1)
+        {
+            evt.Hidden = true;
+        }
+        else
+        {
+            evt.Hidden = false;
+        }
+
+        // 🟡 Create the DTO from the event
+        var eventDto = new EventDto
+            {
+                Title = evt.Title,
+                Description = evt.Description,
+                Start = evt.Start,
+                End = evt.End,
+                AllDay = evt.AllDay,
+                MaxSlots = evt.MaxSlots,
+                Recurring = evt.Recurring,
+                Gender = evt.Gender,
+                AllowFriendBooking = evt.AllowFriendBooking,
+                Hidden = evt.Hidden
+            // Include any other matching properties
+            };
+
+        // 🟢 Send the DTO instead of the full Event model
+        await EventService.EditEventAsync(id, eventDto);
+
+        // var response = await Http.PutAsJsonAsync("api/Events/" + id, evt);
+
+
+        // if (response.IsSuccessStatusCode)
+        // {
+        //     await LoadEventsAsync();
+        // }
+
+        // else
+        // {
+        //     var strResponse = await response.Content.ReadAsStringAsync();
+        //     Console.WriteLine("Json Response: \n" + strResponse);
+
+        //     try
+        //     {
+        //         var jsonResponse = JsonNode.Parse(strResponse);
+        //         Errors = jsonResponse?["errors"] ?? new JsonObject();
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Console.WriteLine("Exception: " + ex.Message);
+        //     }
+        // }
+    }
+    public int SpotsRemaining(int evtId)
+    {
+        if (evts == null || bookings == null)
+            return 0;
+
+        var evt = evts.SingleOrDefault(e => e.Id == evtId);
+        if (evt == null)
+            return 0;
+
+        var count = bookings.Count(b =>
+            b.EventId == evt.Id &&
+            b.Unbooked == false &&
+            b.Reserve == false);
+
+        return evt.MaxSlots - count;
+    }
+}

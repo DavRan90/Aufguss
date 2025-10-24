@@ -1,0 +1,218 @@
+﻿@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+<div class="top-row ps-3 navbar navbar-dark bg-success">
+    <div class="container-fluid m-4">
+        <img src="images/gnesta-kommun-logotyp.png" class="img-fluid" />
+        @* <a class="navbar-brand" href="">Freja Bad & Gym</a> *@
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3 ">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu " aria-hidden="true"></span> Startsida
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/About">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-patch-question-fill" viewBox="0 0 16 16">
+                    <path d="M5.933.87a2.89 2.89 0 0 1 4.134 0l.622.638.89-.011a2.89 2.89 0 0 1 2.924 2.924l-.01.89.636.622a2.89 2.89 0 0 1 0 4.134l-.637.622.011.89a2.89 2.89 0 0 1-2.924 2.924l-.89-.01-.622.636a2.89 2.89 0 0 1-4.134 0l-.622-.637-.89.011a2.89 2.89 0 0 1-2.924-2.924l.01-.89-.636-.622a2.89 2.89 0 0 1 0-4.134l.637-.622-.011-.89a2.89 2.89 0 0 1 2.924-2.924l.89.01zM7.002 11a1 1 0 1 0 2 0 1 1 0 0 0-2 0m1.602-2.027c.04-.534.198-.815.846-1.26.674-.475 1.05-1.09 1.05-1.986 0-1.325-.92-2.227-2.262-2.227-1.02 0-1.792.492-2.1 1.29A1.7 1.7 0 0 0 6 5.48c0 .393.203.64.545.64.272 0 .455-.147.564-.51.158-.592.525-.915 1.074-.915.61 0 1.03.446 1.03 1.084 0 .563-.208.885-.822 1.325-.619.433-.926.914-.926 1.64v.111c0 .428.208.745.585.745.336 0 .504-.24.554-.627" />
+                </svg> Om Aufguss
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link d-flex align-items-center" href="/BokaAufguss">
+                <i class="bi bi-thermometer-half fs-5 me-2" style="line-height: 1;"></i>
+                <span>Boka Aufguss</span>
+            </NavLink>
+        </div>
+
+        @* <div class="nav-item px-3">
+            <NavLink class="nav-link d-flex align-items-center text-bg-warning" href="/BokaVattenfys">
+                <i class="bi bi-water fs-5 me-2" style="line-height: 1;"></i>
+                <span>Boka Vattenfys</span>
+            </NavLink>
+        </div> *@
+        <div>
+            <p></p>
+        </div>
+        <AuthorizeView>
+            <Authorized>
+
+                <div class="nav-item">
+                    <div class="nav-link d-flex align-items-center justify-content-between" @onclick="() => showUserSection = !showUserSection" style="cursor:pointer;">
+                        <NavLink class="nav-link d-flex align-items-center">
+                                <i class="bi bi-person fs-5 me-2" style="line-height: 1;"></i>
+                                <span>@context.User.FindFirst("firstName")?.Value</span>
+                            </NavLink>
+                        
+                        <i class="bi @(showUserSection ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                    </div>
+                </div>
+                @if (showUserSection)
+                {
+
+                    <div class="nav-item px-4">
+                        <NavLink class="nav-link d-flex align-items-center" href="/Uppgifter">
+                            <i class="bi bi-person-fill fs-5 me-2" style="line-height: 1;"></i>
+                            <span>Hantera uppgifter</span>
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-4">
+                        <NavLink class="nav-link d-flex align-items-center" href="/Dina_bokningar">
+                            <i class="bi bi-calendar-check-fill fs-5 me-2" style="line-height: 1;"></i>
+                            <span>Dina bokningar</span>
+                        </NavLink>
+                    </div>
+                    @* <div class="nav-item px-4">
+                        <form method="post" @onclick="BeginLogOut">
+                            <button type="submit" class="nav-link btn btn-link d-flex align-items-center">
+                                <i class="bi bi-box-arrow-right fs-5 me-2" style="line-height: 1;"></i>
+                                <span>Logga ut</span>
+                            </button>
+                        </form>
+                    </div> *@
+                }
+ 
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex align-items-center" href="/Register">
+                        <i class="bi bi-bookmark-plus-fill fs-5 me-2" style="line-height: 1;"></i>
+                        <span>Registrera dig</span>
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex align-items-center" href="/login">
+                        <i class="bi bi-person fs-5 me-2" style="line-height: 1;"></i>
+                        <span>Logga in</span>
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+
+        <AuthorizeView Roles="Admin,SuperAdmin">
+            <div class="nav-item">
+                <div class="nav-link d-flex align-items-center justify-content-between" @onclick="() => showAdminSection = !showAdminSection" style="cursor:pointer;">
+                    <NavLink class="nav-link d-flex align-items-center">
+                        <i class="bi bi-gear-fill fs-5 me-2" style="line-height: 1;"></i>
+                        <span>Admin</span>
+                    </NavLink>
+                    @* <div class="d-flex align-items-center">
+                        <i class="bi bi-gear-fill fs-5 me-2" style="line-height: 1;"></i>
+                        <span>Admin</span>
+                    </div> *@
+                    <i class="bi @(showAdminSection ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                </div>
+            </div>
+            @if (showAdminSection)
+            {
+                    <div class="nav-item px-4">
+                        <NavLink class="nav-link d-flex align-items-center" href="/Users">
+                            <i class="bi bi-people-fill fs-5 me-2" style="line-height: 1;"></i>
+                            <span>Hantera användare</span>
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-4">
+                        <NavLink class="nav-link d-flex align-items-center" href="/Events">
+                        <i class="bi bi-thermometer-half fs-5 me-2" style="line-height: 1;"></i>
+                            <span>Hantera Aufguss</span>
+                        </NavLink>
+                </div>
+
+                @* <div class="nav-item px-4">
+                    <NavLink class="nav-link d-flex align-items-center text-bg-warning" href="/HanteraVattenfys">
+                        <i class="bi bi-water fs-5 me-2" style="line-height: 1;"></i>
+                        <span>Hantera Vattenfys</span>
+                    </NavLink>
+                </div> *@
+
+                    <div class="nav-item px-4">
+                        <NavLink class="nav-link d-flex align-items-center" href="/Nyheter">
+                            <i class="bi bi-newspaper fs-5 me-2" style="line-height: 1;"></i>
+                            <span>Nyheter</span>
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-4">
+                        <NavLink class="nav-link d-flex align-items-center" href="/Info">
+                            <i class="bi bi-patch-question-fill fs-5 me-2" style="line-height: 1;"></i>
+                            <span>Frågor och svar</span>
+                        </NavLink>
+                    </div>
+
+                <div class="nav-item px-4">
+                    <NavLink class="nav-link d-flex align-items-center" href="/Inställningar">
+                        <i class="bi bi-gear-fill fs-5 me-2" style="line-height: 1;"></i>
+                        <span>Inställningar</span>
+                    </NavLink>
+                </div>
+
+                    @* <div class="nav-item px-4">
+                    <NavLink class="nav-link d-flex align-items-center" href="/templates">
+                            <i class="bi bi-ui-checks fs-5 me-2" style="line-height: 1;"></i>
+                            <span>Mallar</span>
+                        </NavLink>
+                    </div> *@
+            }
+            
+        </AuthorizeView>
+    </nav>
+</div>
+
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthProvider
+@inject IJSRuntime JS
+
+@code {
+    private bool collapseNavMenu = false;
+
+    private bool showUserSection = true;
+
+    private bool showAdminSection = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    // private bool isAdminOrSuperAdmin = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += (_, __) => CollapseNavMenu();
+        // var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        // var user = authState.User;
+
+        // isAdminOrSuperAdmin = user.IsInRole("Admin") || user.IsInRole("SuperAdmin");
+    }
+
+    public async Task BeginLogOut()
+    {
+        // 1. Remove token
+        await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+
+        // 2. Notify system
+        ((Services.CustomAuthStateProvider)AuthProvider).NotifyUserLogout();
+
+        // 3. Redirect
+        Navigation.NavigateTo("/login", forceLoad: true);
+        // Navigation.NavigateToLogout("authentication/logout");
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+    private void CollapseNavMenu()
+    {
+        collapseNavMenu = true;
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,188 @@
+﻿@page "/Nyheter"
+@attribute [Authorize(Roles = "Admin, SuperAdmin")]
+@using System.Text.Json.Nodes
+@using System.IO;
+
+<h1 class=mb-5>Lägg till nyhet</h1>
+<EditForm Model="EntryDtoData" OnValidSubmit="SaveEntry">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row mb-3">
+        <label class="col-md-2 col-form-label">Titel</label>
+        <div class="col-md-4">
+            <InputText class="form-control" @bind-Value="EntryDtoData.Title" />
+            <ValidationMessage For="@(() => EntryDtoData.Title)" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label class="col-md-2 col-form-label">Beskrivning</label>
+        <div class="col-md-4">
+            <InputTextArea rows="4" class="form-control" @bind-Value="EntryDtoData.Description" />
+            <ValidationMessage For="@(() => EntryDtoData.Description)" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label class="col-md-2 col-form-label">Välj en bild</label>
+        <div class="col-md-4">
+    <select class="form-select" @onchange="OnImageSelect">
+        <option disabled selected>Välj en bild</option>
+        @foreach (var image in ImageOptions)
+                {
+                    <option value="@image">@Path.GetFileName(image)</option>
+                }
+            </select>
+
+            @if (!string.IsNullOrEmpty(SelectedImageUrl))
+            {
+                <img src="@SelectedImageUrl" class="img-thumbnail mt-2" style="max-height: 200px;" />
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="offset-md-2 col-md-2 d-grid">
+            <button type="submit" class="btn btn-primary">Spara</button>
+        </div>
+        <div class="col-md-2 d-grid">
+            <a class="btn btn-outline-primary" href="/Nyheter">Avbryt</a>
+        </div>
+    </div>
+</EditForm>
+
+<br />
+<br />
+<br />
+
+
+<h1>Nyheter</h1>
+
+@if (entries == null)
+{
+    <p><em>Laddar...</em></p>
+}
+
+else
+{
+    foreach (var entry in entries)
+    {
+        <div class="card m-2 card-width mt-5">
+            <h2 class="card-header">@entry.Title</h2>
+            <img class="card-img-top" src="@entry.Image" />
+            <div class="card-body">
+                <p class="card-text linebreak">@entry.Description</p>
+                @if (!string.IsNullOrEmpty(entry.Url))
+                {
+                    <button class="btn btn-primary">Boka</button>
+                }
+                <button class="btn btn-danger" @onclick="async () => await DeleteEntry(entry.Id)">Ta bort</button>
+            </div>
+            <p class="card-footer">Publicerad: @entry.CreatedAt.ToString("dd/MM/yyyy | HH:mm")</p>
+        </div>
+    }
+}
+
+@inject HttpClient Http
+@inject NavigationManager navManager
+@inject IEntryService EntryService
+@inject IEventService EventService
+@inject IImageService ImageService
+
+
+@code {
+    private List<string> ImageOptions = new();
+    private string SelectedImageUrl;
+
+
+
+    private void OnImageSelect(ChangeEventArgs e)
+    {
+        SelectedImageUrl = e.Value?.ToString();
+        EntryDtoData.Image = SelectedImageUrl; // Bind selected image URL to your model
+    }
+
+
+    private string fileLocation = "";
+    public EntryDto EntryDtoData { get; set; } = new();
+    public JsonNode Errors { get; set; } = new JsonObject();
+
+    private List<Event>? Events = new();
+    private List<Entry>? entries;
+
+    protected override async Task OnInitializedAsync()
+    {
+        fileLocation = new Uri(Http.BaseAddress, "api/upload/").ToString();
+        // entries = await Http.GetFromJsonAsync<List<Entry>>("api/Entries");
+        // Events = await Http.GetFromJsonAsync<List<Event>>("api/Events");
+        entries = await EntryService.GetEntriesAsync();
+        Events = await EventService.GetEventsAsync();
+        Events = Events.Where(e => e.Start > DateTime.Now && e.Hidden == false).ToList();
+        ImageOptions = await ImageService.GetImageListAsync();
+        // ImageOptions = await Http.GetFromJsonAsync<List<string>>("api/upload/news");
+    }
+
+    private string statusMessage = "";
+
+    private async Task UploadFile(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (file is null)
+        {
+            statusMessage = "No file selected.";
+            return;
+        }
+
+        var content = new MultipartFormDataContent();
+        var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 5); // 5MB limit
+        var fileContent = new StreamContent(stream);
+
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+        // "file" is the name of the parameter expected by the API
+        content.Add(content: fileContent, name: "file", fileName: file.Name);
+
+        try
+        {
+            var response = await Http.PostAsync("api/upload", content);
+            if (response.IsSuccessStatusCode)
+            {
+                statusMessage = "File uploaded successfully!";
+                EntryDtoData.Image = file.Name;
+            }
+            else
+            {
+                statusMessage = $"Upload failed: {response.ReasonPhrase}";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task SaveEntry()
+    {
+        if(EntryDtoData.Image == "")
+        {
+            EntryDtoData.Image = "aufguss 2.jpg";
+        }
+
+        entries = await EntryService.AddEntryAsync(EntryDtoData);
+    }
+
+    private async Task DeleteEntry(int id)
+    {
+        try
+        {
+            await EntryService.RemoveEntryAsync(id);
+            entries = await EntryService.GetEntriesAsync();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error: {ex.Message}";
+        }
+    
+    }
+}

@@ -1,0 +1,301 @@
+﻿@page "/Dina_bokningar"
+@using Aufguss.Models
+@using BlazorCalendar
+@using BlazorCalendar.Models
+
+<h3>Dina bokningar</h3>
+
+@if (events == null)
+{
+    <p><em>Laddar...</em></p>
+}
+else
+{
+    <p>Visa kalender</p>
+    <input type="checkbox" @bind="ShowCalendar" />
+    <p></p>
+    <p></p>
+
+    if (!ShowCalendar)
+    {
+        <table class="table mb-5">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Plats</th>
+                    <th>Kön</th>
+                    <th>Titel</th>
+                    <th>Datum</th>
+                    <th style="width: 80px;"></th> <!-- Icons column -->
+                </tr>
+            </thead>
+            <tbody>
+                @if (extendedBookings != null && extendedBookings.Any())
+                {
+                    @foreach (var book in extendedBookings)
+                    {
+                        <tr style="cursor: pointer;"
+                        @onclick="@(() => NavManager.NavigateTo($"/Booking/{book.BookingId}"))">
+                            <td>
+                                @if (book.Status == "Inbokad")
+                                {
+                                    <span class="badge rounded-pill text-bg-success p-2">Inbokad</span>
+                                }
+                                else
+                                {
+                                    <span class="badge rounded-pill text-bg-warning p-2">Reserv</span>
+                                }
+                            </td>
+                            <td>
+                                @if (book.Status == "Inbokad")
+                                {
+                                    <span class="badge rounded-pill text-bg-success p-2">✓</span>
+                                }
+                                else
+                                {
+                                    <span class="badge rounded-pill text-bg-warning p-2">@book.ReservePosition</span>
+                                }
+                            </td>
+                            <td>
+                                @if (book.Gender == 0)
+                                {
+                                    <span class="badge rounded-pill text-bg-primary p-2">Herrar</span>
+                                }
+                                else
+                                {
+                                    <span class="badge rounded-pill text-bg-danger p-2">Damer</span>
+                                }
+                            </td>
+                            <td>@book.Title</td>
+                            <td>@book.Start.ToString("dd/MM/yyyy | HH:mm")</td>
+                            <td class="text-nowrap">
+                                <div class="d-flex flex-column flex-md-row">
+                                    <button class="btn btn-sm btn-outline-danger"
+                                    title="Ta bort"
+                                    @onclick:stopPropagation
+                                    @onclick="async () => await ShowAlert(book)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-muted text-start">Du har inga bokningar</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        @*     <p>Visa Veckovy</p>
+    <input type="checkbox" @bind="ShowWeek" />
+    <p></p>
+    <p></p> *@
+        <div class="d-flex justify-content-center align-items-center">
+            <button class="btn btn-primary m-3" @onclick="@(() => ChangeMonth(-1))">←</button>
+            <h3 class="mx-2 text-center" style="width: 15ch;">@FirstDate.ToString("MMMM yyyy")</h3>
+            <button class="btn btn-primary m-3" @onclick="@(() => ChangeMonth(1))">→</button>
+        </div>
+        <CalendarContainer TasksList="@ModelTasks" DisplayedView="ShowWeek ? DisplayedView.Weekly : DisplayedView.Monthly" FirstDate="@FirstDate">
+            <MonthlyView SaturdayColor="White"
+            SundayColor="White" />
+
+            <WeekView SaturdayColor="White"
+            SundayColor="White" />
+        </CalendarContainer>
+    }
+}
+
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject SweetAlertService Swal
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
+@inject IBookingService BookingService
+@inject IEventService EventService
+@inject IUserService UserService
+@inject IAuthService AuthService
+
+@code {
+    private BlazorCalendar.Models.Tasks[]? ModelTasks;
+    private DateTime FirstDate = DateTime.Today;
+    [Parameter]
+    public EventCallback<bool> ValueChanged { get; set; }
+
+    public void ChangeMonth(int change)
+    {
+        FirstDate = FirstDate.AddMonths(change);
+        StateHasChanged();
+    }
+
+    private bool _showWeek;
+    [Parameter]
+    public bool ShowWeek
+    {
+        get { return _showWeek; }
+        set
+        {
+            if (_showWeek != value)
+            {
+                _showWeek = value;
+            }
+            ValueChanged.InvokeAsync(_showWeek);
+        }
+    }
+
+    private bool _showCalendar;
+    [Parameter]
+    public bool ShowCalendar
+    {
+        get { return _showCalendar; }
+        set
+        {
+            if (_showCalendar != value)
+            {
+                _showCalendar = value;
+            }
+            ValueChanged.InvokeAsync(_showCalendar);
+        }
+    }
+
+    private List<UserWithRolesDto>? Users;
+    private UserWithRolesDto? CurrentUser;
+
+    private List<Event>? events;
+    private List<Booking>? bookings;
+    private List<DisplayBooking>? extendedBookings;
+    // private List<Event>? eventsBooked;
+
+    protected override async Task OnInitializedAsync()
+    {
+        extendedBookings = new();
+        // Users = await Http.GetFromJsonAsync<List<UserWithRolesDto>>("api/auth/users");
+        Users = await UserService.GetUsersAsync();
+        // var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authState = await AuthService.GetAuthenticationStateAsync();
+        var loggedInUser = authState.User;
+        var userIdString = loggedInUser.FindFirst("sub")?.Value;
+
+        CurrentUser = Users?.Where(u => u.Id == userIdString).SingleOrDefault();
+
+        // var allEvents = await Http.GetFromJsonAsync<List<Event>>("api/Events");
+        var allEvents = await EventService.GetEventsAsync();
+        // bookings = await Http.GetFromJsonAsync<List<Booking>>("api/Bookings");
+        bookings = await BookingService.GetBookingsAsync();
+        events = (from b in bookings
+                  join e in allEvents on b.EventId equals e.Id
+                  where b.UserId == userIdString &&
+                       !b.Unbooked &&
+                       !b.Reserve &&
+                       e.Start > DateTime.Now
+                  orderby e.Start
+                  select e).ToList();
+        var userBookingsWithEvents = (from b in bookings
+                                      join e in allEvents on b.EventId equals e.Id
+                                      where /* b.UserId == userIdString && */
+                                            !b.Unbooked &&
+                                            e.Start > DateTime.Now
+                                      orderby e.Start
+                                      select new { Booking = b, Event = e }).ToList();
+
+
+
+        userBookingsWithEvents = userBookingsWithEvents.Where(u => u.Booking.UserId == userIdString).ToList();
+
+
+        foreach (var booking in userBookingsWithEvents)
+        {
+            int? reservePosition = null;
+
+            var reservesForThisEvent = bookings
+                                            .Where(b => b.EventId == booking.Event.Id && b.Reserve && !b.Unbooked)
+                                            .OrderBy(b => b.ReserveAt)
+                                            .ToList();
+
+            if (booking.Booking.Reserve)
+            {
+                // Find the user's position in the reserve list
+                reservePosition = reservesForThisEvent
+                    .FindIndex(r => r.Id == booking.Booking.Id) + 1;
+            }
+
+            var newBooking = new DisplayBooking
+                {
+                    Title = booking.Event.Title,
+                    Gender = booking.Event.Gender,
+                    ReservePosition = reservePosition,
+                    Status = booking.Booking.Reserve ? "Reserv" : "Inbokad",
+                    Start = booking.Event.Start,
+                    BookingId = booking.Booking.Id,
+                    EventId = booking.Event.Id
+                };
+            extendedBookings.Add(newBooking);
+        }
+
+
+
+        ModelTasks = userBookingsWithEvents
+            .Select(be => new BlazorCalendar.Models.Tasks
+                {
+                    ID = be.Event.Id,
+                    Caption = be.Booking.Reserve ? "? Reserv" : "✓ Inbokad",
+                    DateStart = be.Event.Start,
+                    DateEnd = be.Event.End ?? be.Event.Start,
+                    Color = be.Booking.Reserve
+                                            ? "lightyellow" // Highlight reserved bookings with yellow (for example)
+                                            : be.Event.Gender switch
+                                            {
+                                                Gender.Male => "lightblue",
+                                                Gender.Female => "lightpink",
+                                                _ => "lightgray"
+                                            },
+                    Comment = be.Event.Description
+                })
+            .ToArray();
+    }
+
+
+
+    private async Task ShowAlert(DisplayBooking evt)
+    {
+        var result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Bekräfta avbokning",
+                Text = $"Vill du avboka dig från passet {evt.Title}?",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Ja, avboka",
+                CancelButtonText = "Nej, avboka inte",
+            });
+        if (result.IsConfirmed)
+        {
+            await DeleteBooking(evt.EventId);
+        }
+    }
+
+    private async Task DeleteBooking(int id)
+    {
+        var bookingToRemove = bookings.Where(b => b.EventId == id && b.Email == CurrentUser.Email && b.Unbooked == false).SingleOrDefault();
+        // await Http.DeleteAsync("api/Bookings/" + bookingToRemove.Id);
+        // bookings = await Http.GetFromJsonAsync<List<Booking>>("api/Bookings");
+        await BookingService.UnbookAsync(bookingToRemove.Id);
+        bookings = await BookingService.GetBookingsAsync();
+        await JSRuntime.InvokeVoidAsync("Swal.fire", "Avbokad", "Du är nu avbokad från passet", "success");
+        await OnInitializedAsync();
+    }
+
+    public class DisplayBooking()
+    {
+        public Gender Gender { get; set; }
+        public string? Status { get; set; }
+        public int? ReservePosition { get; set; }
+        public string? Title { get; set; }
+        public DateTime Start { get; set; }
+        public int EventId { get; set; }
+        public int BookingId { get; set; }
+    }
+}

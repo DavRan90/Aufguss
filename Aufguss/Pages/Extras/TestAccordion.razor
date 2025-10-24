@@ -1,0 +1,41 @@
+﻿@page "/Test"
+
+@inject HttpClient Http
+
+
+<h3>Send Test Email</h3>
+
+<input class="form-control mb-2" @bind="Email" placeholder="Enter your email" />
+<button class="btn btn-primary" @onclick="SendEmail">Send Email</button>
+
+@if (!string.IsNullOrEmpty(StatusMessage))
+{
+    <p class="mt-2">@StatusMessage</p>
+}
+
+@code {
+    private string Email = "";
+    private string StatusMessage = "";
+
+    private async Task SendEmail()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/email/send-test", Email);
+
+            if (response.IsSuccessStatusCode)
+            {
+                StatusMessage = "✅ Email sent!";
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                StatusMessage = $"❌ Failed: {error}";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"❌ Exception: {ex.Message}";
+        }
+    }
+}
