@@ -1,12 +1,14 @@
 ﻿@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Services
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthProvider
 @inject IJSRuntime JS
 
 <AuthorizeView>
     <Authorized>
+            Hej @context.User.FindFirst("firstName")?.Value
         @* Hej, @context.User.Identity?.Name! *@
-        Hej @context.User.FindFirst("firstName")?.Value
+        
         @* <button class="nav-link btn btn-link" @onclick="BeginLogOut">Logga ut</button> *@
     </Authorized>
     <NotAuthorized>
@@ -15,6 +17,11 @@
 </AuthorizeView>
 
 @code{
+    // private readonly DemoAuthenticationStateProvider _authState;
+    // public LoginDisplay(DemoAuthenticationStateProvider authState)
+    // {
+    //     _authState = authState;
+    // }
     public async Task BeginLogOut()
     {
         // 1. Remove token
@@ -27,4 +34,5 @@
         Navigation.NavigateTo("/login", forceLoad: true);
         // Navigation.NavigateToLogout("authentication/logout");
     }
+
 }

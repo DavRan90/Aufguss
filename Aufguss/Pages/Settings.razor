@@ -3,7 +3,8 @@
 @using Aufguss.Models
 @using System.Text.Json.Nodes
 
-<h3 class="mb-5">Ändra inställningar för saker och ting</h3>
+<div class="card">
+<h3 class="mb-5">Ändra inställningar</h3>
 
 <EditForm Model="SiteSettingsData" OnValidSubmit="SaveSettings">
     <DataAnnotationsValidator />
@@ -14,27 +15,6 @@
         <div class="col-md-4">
             <InputNumber class="form-control" @bind-Value="SiteSettingsData.MaxNews" />
             <ValidationMessage For="@(() => SiteSettingsData.MaxNews)" />
-        </div>
-    </div>
-
-    <div class="row mb-3">
-        <label class="col-md-2 col-form-label">Ta bort bild</label>
-        <div class="col-md-4">
-            <select class="form-select" disabled @onchange="OnImageSelect">
-                <option disabled selected>Välj en bild</option>
-                @foreach (var image in ImageOptions)
-                {
-                    <option value="@image">@Path.GetFileName(image)</option>
-                }
-            </select>
-
-            @if (!string.IsNullOrEmpty(SelectedImageUrl))
-            {
-                <div>
-                    <img src="@SelectedImageUrl" class="img-thumbnail mt-2" style="max-height: 200px;" />
-                </div>
-                <button class="btn btn-primary">Ta bort bild</button>
-            }
         </div>
     </div>
 
@@ -58,37 +38,13 @@
         </div>
     </div>
 
-    <div class="row mb-3">
-        <h3>Vattenfys</h3>
-        <div class="alert alert-danger col-md-6 mt-2" role="alert">
-            ⚠️ Funktioner inte tillagda.
-        </div>
-    </div>
-    <div class="row mb-3">
-        <label class="col-md-2 col-form-label">Max bokningar vattenfys</label>
-        <div class="col-md-4">
-            <InputNumber class="form-control" disabled @bind-Value="SiteSettingsData.MaxBookingsVattenfys" />
-            <ValidationMessage For="@(() => SiteSettingsData.MaxBookingsVattenfys)" />
-        </div>
-    </div>
-
-    <div class="row mb-3">
-        <label class="col-md-2 col-form-label">Dagar innan dold bokning blir synlig</label>
-        <div class="col-md-4">
-            <InputNumber class="form-control" disabled @bind-Value="SiteSettingsData.VattenfysHiddenDaysInAdvance" />
-            <ValidationMessage For="@(() => SiteSettingsData.VattenfysHiddenDaysInAdvance)" />
-        </div>
-    </div>
-
-
-
     <div class="row">
         <div class="offset-md-2 col-md-2 d-grid">
             <button type="submit" class="btn btn-primary">Spara inställningar</button>
         </div>
     </div>
 </EditForm>
-
+</div>
 @inject HttpClient Http
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager navManager
@@ -107,7 +63,6 @@
     {
         SelectedImageUrl = e.Value?.ToString();
         ImageSelected = true;
-        // EntryDtoData.Image = SelectedImageUrl; // Bind selected image URL to your model
     }
 
     private SiteSettings SiteSettingsData = new();
@@ -115,8 +70,6 @@
     protected override async Task OnInitializedAsync()
     {
         fileLocation = new Uri(Http.BaseAddress, "api/upload/").ToString();
-        ImageOptions = await Http.GetFromJsonAsync<List<string>>("api/upload/news");
-        // SiteSettingsData = await Http.GetFromJsonAsync<SiteSettings>("api/settings/");
         SiteSettingsData = await SettingsService.GetSettingsAsync();
     }
 

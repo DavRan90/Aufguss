@@ -6,6 +6,7 @@
 
 <div class="row mb-5">
     <div class="col-lg-8">
+        <div class="card">
         <h1 class=mb-5>Ändra aktivitet</h1>
 
         @if (eventData == null)
@@ -108,7 +109,7 @@
                 </div>
             </div>
         }
-
+        </div>
     </div>
 </div>
 
@@ -121,7 +122,8 @@
 
 @if (Bookings != null)
 {
-    <table class="table mb-5">
+    <div class="table-rounded mb-3">
+    <table class="table table-info mb-5">
         <thead>
             <tr>
 
@@ -211,6 +213,7 @@
             }
         </tbody>
     </table>
+    </div>
     @* <a class="btn btn-primary mb-3 me-2" href="/Bookings/Book/@Id">Lägg till deltagare</a> *@
     <a class="btn btn-primary mb-3 me-2" @onclick="async () => await AddGuest(Id)">Lägg till deltagare</a>
 }

@@ -3,6 +3,7 @@
 @using BlazorCalendar
 @using BlazorCalendar.Models
 
+
 <h3>Dina bokningar</h3>
 
 @if (events == null)
@@ -18,7 +19,8 @@ else
 
     if (!ShowCalendar)
     {
-        <table class="table mb-5">
+        <div class="table-rounded">
+        <table class="table table-info mb-5">
             <thead>
                 <tr>
                     <th>Status</th>
@@ -89,6 +91,7 @@ else
                 }
             </tbody>
         </table>
+        </div>
     }
     else
     {
@@ -96,6 +99,7 @@ else
     <input type="checkbox" @bind="ShowWeek" />
     <p></p>
     <p></p> *@
+    <div class="card">
         <div class="d-flex justify-content-center align-items-center">
             <button class="btn btn-primary m-3" @onclick="@(() => ChangeMonth(-1))">←</button>
             <h3 class="mx-2 text-center" style="width: 15ch;">@FirstDate.ToString("MMMM yyyy")</h3>
@@ -108,6 +112,7 @@ else
             <WeekView SaturdayColor="White"
             SundayColor="White" />
         </CalendarContainer>
+        </div>
     }
 }
 

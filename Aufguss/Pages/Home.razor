@@ -7,7 +7,7 @@
 
 
 
-<h1 class="m-2">Aktuellt på Freja Bad & Gym</h1>
+<h1 class="m-2 fw-bold">Aktuellt på Freja Bad & Gym</h1>
 
 @if(entries == null)
 {
@@ -16,50 +16,10 @@
 
 else
 {
-    @* <div class="row">
-        @foreach (var entry in entries)
-        {
-            <div class="col-12 col-md-6">
-                <div class="card card-width mt-5 bg-info-subtle p-5">
-                    <h2 class="card-header rounded rounded-4 bg-warning-subtle m-4">@entry.Title</h2>
-                    <img class="card-img-top p-4 rounded rounded-5" src="@entry.Image" />
-                    <div class="card-body">
-                        <p class="card-text linebreak m-2">@entry.Description</p>
-                        @if (!string.IsNullOrEmpty(entry.Url))
-                        {
-                            <button class="btn btn-primary m-2" @onclick="async () => await BookEvent(entry.Url)">Boka</button>
-                        }
-                    </div>
-                    <p class="card-footer m-4 rounded bg-body-tertiary">
-                        Publicerad: @entry.CreatedAt.ToString("dd/MM/yyyy | HH:mm")
-                    </p>
-                </div>
-            </div>
-        }
-    </div> *@
-
     foreach(var entry in entries)
     {
-        @* <div class="card m-2 card-width mt-5">
-            <h2 class="card-header">@entry.Title</h2>
-            <div class="card-body bg-info-subtle">
-                <img src="@entry.Image"
-                     class="img-fluid float-start me-3 mb-2 p-4 rounded rounded-5"
-                     style="max-width: 50vw;" />
-
-                <p class="card-text p-4">
-                    @entry.Description
-                </p>
-                @if (!string.IsNullOrEmpty(entry.Url))
-                {
-                    <button class="btn btn-primary" @onclick="async () => await BookEvent(entry.Url)">Boka</button>
-                }
-            </div>
-            <p class="card-footer">Publicerad: @entry.CreatedAt.ToString("dd/MM/yyyy | HH:mm")</p>
-        </div> *@
-
-        <div class="card card-width mt-5 bg-info-subtle p-3">
-            <h2 class="card-header rounded rounded-4 bg-warning-subtle m-4">@entry.Title</h2>
+        <div class="card mt-5 p-3">
+            <h2 class=" rounded rounded-4  m-4">@entry.Title</h2>
             <img class="card-img-top p-4 rounded rounded-5" src="@entry.Image" />
             <div class="card-body">
                 <p class="card-text linebreak m-2">@entry.Description</p>
@@ -82,19 +42,13 @@ else
 @code {
     private List<Entry>? entries;
     private SiteSettings siteSettings = new();
-
-    // private string base64Image;
-
     private string imagePathFromDb = "";
     private string fileLocation = "";
 
 
     protected override async Task OnInitializedAsync()
     {
-        // siteSettings = await Http.GetFromJsonAsync<SiteSettings>("api/settings/");
         siteSettings = await SettingsService.GetSettingsAsync();
-
-        // var allEntries = await Http.GetFromJsonAsync<List<Entry>>("api/Entries");
         var allEntries = await EntryService.GetEntriesAsync();
 
         if (allEntries != null)
@@ -110,18 +64,6 @@ else
         }
 
         fileLocation = new Uri(Http.BaseAddress, "api/upload/").ToString();
-
-        
-    
-
-        // var fileName = "flower.jpg"; // from DB or wherever
-        // var response = await http.GetAsync($"api/upload/{fileName}");
-
-        // if (response.IsSuccessStatusCode)
-        // {
-        //     var imageBytes = await response.Content.ReadAsByteArrayAsync();
-        //     base64Image = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
-        // }
     }
 
     private async Task BookEvent(string id)

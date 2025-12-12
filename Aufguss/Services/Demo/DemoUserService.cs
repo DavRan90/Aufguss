@@ -9,14 +9,25 @@ namespace Aufguss.Services.Demo
     {
         new UserWithRolesDto
             {
-                Id = "demo-user-id",
-                UserName = "demo@demo.com",
+                Id = "demo-admin-id",
+                UserName = "demo@admin.com",
                 FirstName = "Demo",
-                SurName = "User",
-                Email = "demo@demo.com",
+                SurName = "Admin",
+                Email = "demo@admin.com",
                 PhoneNumber = "+46701234567",
                 Gender = Gender.Male,
                 Roles = new List<string> { "Admin" }
+            },
+            new UserWithRolesDto
+            {
+                Id = "demo-user-id",
+                UserName = "demo@user.com",
+                FirstName = "Demo",
+                SurName = "User",
+                Email = "demo@user.com",
+                PhoneNumber = "+46701234568",
+                Gender = Gender.Male,
+                Roles = new List<string> { "User" }
             },
             new UserWithRolesDto
             {

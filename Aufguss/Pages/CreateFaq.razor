@@ -3,7 +3,7 @@
 @using Aufguss.Models
 @using System.Text.Json.Nodes
 @using System.Text.Json
-
+<div class="card">
 <h1 class=mb-5>Lägg till Frågor och Svar</h1>
 <EditForm Model="FaqDtoData" OnValidSubmit="SaveFaq">
     <DataAnnotationsValidator />
@@ -34,7 +34,7 @@
         </div>
     </div>
 </EditForm>
-
+</div>
 <br />
 <br />
 <br />
@@ -48,6 +48,8 @@
 }
 else
 {
+    <div class="card">
+
     <div id="faqAccordion" class="accordion">
         @foreach (var faq in faqs)
         {
@@ -97,6 +99,7 @@ else
                 </div>
             </div>
         }
+    </div>
     </div>
 }
 

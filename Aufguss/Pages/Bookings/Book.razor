@@ -4,7 +4,7 @@
 
 <div class="row mb-5">
     <div class="col-lg-8">
-
+        <div class="card">
 
         @if (eventData == null)
         {
@@ -19,6 +19,7 @@
         }
         else
         {
+            
             <h1 class=mb-5>@EventDtoData.Title</h1>
             @* if (eventData.Start < DateTime.Now)
             {
@@ -265,8 +266,9 @@
                 </div>
             }
             @* } *@
-
+            
         }
+        </div>
     </div>
 </div>
 
