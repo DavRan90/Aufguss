@@ -24,7 +24,7 @@ else
             <thead>
                 <tr>
                     <th>Status</th>
-                    <th>Plats</th>
+                    <th>#</th>
                     <th>Kön</th>
                     <th>Titel</th>
                     <th>Datum</th>
@@ -41,7 +41,7 @@ else
                             <td>
                                 @if (book.Status == "Inbokad")
                                 {
-                                    <span class="badge rounded-pill text-bg-success p-2">Inbokad</span>
+                                    <span class="badge rounded-pill text-bg-success p-2">Bokad</span>
                                 }
                                 else
                                 {
@@ -61,18 +61,18 @@ else
                             <td>
                                 @if (book.Gender == 0)
                                 {
-                                    <span class="badge rounded-pill text-bg-primary p-2">Herrar</span>
+                                    <span class="badge rounded-pill text-bg-primary p-2">Herr</span>
                                 }
                                 else
                                 {
-                                    <span class="badge rounded-pill text-bg-danger p-2">Damer</span>
+                                    <span class="badge rounded-pill text-bg-danger p-2">Dam</span>
                                 }
                             </td>
                             <td>@book.Title</td>
                             <td>@book.Start.ToString("dd/MM/yyyy | HH:mm")</td>
                             <td class="text-nowrap">
-                                <div class="d-flex flex-column flex-md-row">
-                                    <button class="btn btn-sm btn-outline-danger"
+                                    <div class="d-flex flex-column flex-md-row align-items-start">
+                                        <button class="btn btn-sm btn-outline-danger flex-shrink-0 w-auto"
                                     title="Ta bort"
                                     @onclick:stopPropagation
                                     @onclick="async () => await ShowAlert(book)">

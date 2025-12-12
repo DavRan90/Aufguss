@@ -35,7 +35,7 @@ else
                         <th>Titel</th>
                         <th>Platser</th>
                         <th>Datum</th>
-                        <th>Dold</th>
+                        <th class="d-none d-md-table-cell">Dold</th>
                         <th style="width: 80px;"></th> <!-- Icons column -->
                     </tr>
                 </thead>
@@ -49,11 +49,11 @@ else
                             <td>
                                 @if (evt.Gender == 0)
                                 {
-                                    <span class="badge rounded-pill text-bg-primary p-2">Herrar</span>
+                                    <span class="badge rounded-pill text-bg-primary p-2">Herr</span>
                                 }
                                 else
                                 {
-                                    <span class="badge rounded-pill text-bg-danger p-2">Damer</span>
+                                    <span class="badge rounded-pill text-bg-danger p-2">Dam</span>
                                 }
                             </td>
                             <td>@evt.Title</td>
@@ -89,7 +89,7 @@ else
                                 </div>
                             </td>
                             <td>@evt.Start.ToString("dd/MM/yyyy | HH:mm")</td>
-                            <td>
+                            <td class="d-none d-md-table-cell">
                                 @if (evt.Hidden)
                                 {
                                     <button class="btn btn-sm btn-success" @onclick:stopPropagation @onclick="async () => await SaveEvent(evt.Id)">Ja</button>
@@ -100,14 +100,14 @@ else
                                 }
                             </td>
                             <td class="text-nowrap">
-                                <div class="d-flex flex-column flex-md-row">
-                                    <button class="btn btn-sm btn-outline-primary mb-1 mb-md-0 me-md-1"
+                                <div class="d-flex flex-column flex-md-row align-items-start">
+                                    <button class="btn btn-sm btn-outline-primary mb-1 mb-md-0 me-md-1 flex-shrink-0 w-auto"
                                             title="Ändra"
                                     @onclick:stopPropagation
                                             @onclick="@(() => NavManager.NavigateTo($"/Events/Edit/{evt.Id}"))">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger"
+                                    <button class="btn btn-sm btn-outline-danger flex-shrink-0 w-auto"
                                             title="Ta bort"
                                     @onclick:stopPropagation
                                             @onclick="async () => await ShowAlert(evt.Id)">

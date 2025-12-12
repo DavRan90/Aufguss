@@ -29,8 +29,14 @@
                     <th class="col-name d-table-cell d-md-none">Namn</th>
 
                     <!-- Username (email) -->
-                    <th class="col-username">Användare</th>
-                    <th class="col-phone">Telefonnummer</th>
+                    <th class="col-username">
+                        <span class="d-none d-md-inline">Användare</span>
+                        <span class="d-inline d-md-none">Anv</span>
+                    </th>
+                    <th class="col-phone">
+                        <span class="d-none d-md-inline">Telefonnummer</span>
+                        <span class="d-inline d-md-none">Tel</span>
+                    </th>
 
                     <!-- Roles -->
                     @* <th class="col-role">Roll</th> *@
@@ -85,11 +91,11 @@
 
                         <!-- Actions -->
                         <td class="col-actions">
-                            <div class="d-flex flex-column flex-md-row">
-                                <button class="btn btn-sm btn-outline-primary mb-1 mb-md-0 me-md-1" title="Ändra">
+                                    <div class="d-flex flex-column flex-md-row align-items-start">
+                                <button class="btn btn-sm btn-outline-primary mb-1 mb-md-0 me-md-1 flex-shrink-0 w-auto" title="Ändra">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger" title="Ta bort" @onclick="async () => await ShowAlert(user.Id)">
+                                        <button class="btn btn-sm btn-outline-danger flex-shrink-0 w-auto" title="Ta bort" @onclick="async () => await ShowAlert(user.Id)">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -127,7 +133,10 @@
                     <!-- Small: combined name column -->
                     <th class="col-name d-table-cell d-md-none">Namn</th>
 
-                    <th class="col-username">Användare</th>
+                        <th class="col-username">
+                            <span class="d-none d-md-inline">Användare</span>
+                            <span class="d-inline d-md-none">Anv</span>
+                        </th>
                     <th class="col-role">Roll</th>
                     <th class="col-actions"></th>
                 </tr>
@@ -170,11 +179,11 @@
 
                         <!-- Actions -->
                                 <td class="col-actions">
-                                    <div class="d-flex flex-column flex-md-row">
+                                    <div class="d-flex flex-column flex-md-row align-items-start flex-shrink-0 w-auto">
                                         <button class="btn btn-sm btn-outline-primary mb-1 mb-md-0 me-md-1" title="Ändra">
                                             <i class="bi bi-pencil"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger" title="Ta bort">
+                                                <button class="btn btn-sm btn-outline-danger flex-shrink-0 w-auto" title="Ta bort">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
