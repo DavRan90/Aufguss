@@ -1,0 +1,29 @@
+﻿@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div id="@EditorId" style="height:300px;"></div>
+
+@code {
+    private string EditorId = "quill-" + Guid.NewGuid();
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_initialized)
+        {
+            _initialized = true;
+            await JS.InvokeVoidAsync("quillInterop.create", EditorId);
+        }
+    }
+
+    public async Task<string> GetHtml() =>
+        await JS.InvokeAsync<string>("quillInterop.getHtml", EditorId);
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!string.IsNullOrEmpty(EditorId))
+        {
+            await JS.InvokeVoidAsync("quillInterop.destroy", EditorId);
+        }
+    }
+}

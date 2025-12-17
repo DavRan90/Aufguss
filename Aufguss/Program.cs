@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.JSInterop;
 
+
 namespace Aufguss;
 
 public class Program
@@ -59,7 +60,7 @@ public class Program
             builder.Services.AddScoped<ITemplateService, ApiTemplateService>();
             builder.Services.AddScoped<IImageService, ApiImageService>();
         }
-
+        //builder.Services.AddScoped<BlazoredTextEditor>();
         builder.Services.AddScoped<Services.AuthorizationMessageHandler>();
 
         builder.Services.AddHttpClient("AuthenticatedClient", client =>

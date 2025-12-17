@@ -3,122 +3,124 @@
 @using Aufguss.Models
 @using System.Text.Json.Nodes
 @using System.Text.Json
-<div class="card">
-<h1 class=mb-5>Lägg till Frågor och Svar</h1>
-<EditForm Model="FaqDtoData" OnValidSubmit="SaveFaq">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+@implements IAsyncDisposable
 
-    <div class="row mb-3">
-        <label class="col-md-2 col-form-label">Fråga</label>
-        <div class="col-md-4">
-            <InputText class="form-control" @bind-Value="FaqDtoData.Question" />
-            <ValidationMessage For="@(() => FaqDtoData.Question)" />
-        </div>
-    </div>
-
-    <div class="row mb-3">
-        <label class="col-md-2 col-form-label">Svar</label>
-        <div class="col-md-4">
-            <InputTextArea rows="4" class="form-control" @bind-Value="FaqDtoData.Answer" />
-            <ValidationMessage For="@(() => FaqDtoData.Answer)" />
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="offset-md-2 col-md-2 d-grid">
-            <button type="submit" class="btn btn-primary">Spara</button>
-        </div>
-        <div class="col-md-2 d-grid">
-            <a class="btn btn-outline-primary" href="/Info">Avbryt</a>
-        </div>
-    </div>
-</EditForm>
+<div class="card mb-5">
+    <h2>Lägg till text</h2>
+    <QuillEditor @ref="editor"/>
+<button class="btn btn-primary my-2" @onclick="Save">Spara</button>
 </div>
-<br />
-<br />
-<br />
 
-<p></p>
+<div class="card mb-5">
+    <h4>Preview</h4>
+<div class="border p-3 rounded">
+    @((MarkupString)EditorHtml)
+</div>
+</div>
 
+
+<div class="card mb-5">
+    <h1 class="mb-5">Lägg till Frågor och Svar</h1>
+    <EditForm Model="FaqDtoData" OnValidSubmit="SaveFaq">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="row mb-3">
+            <label class="col-md-2 col-form-label">Fråga</label>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="FaqDtoData.Question" />
+                <ValidationMessage For="@(() => FaqDtoData.Question)" />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <label class="col-md-2 col-form-label">Svar</label>
+            <div class="col-md-4">
+                <InputTextArea rows="4" class="form-control" @bind-Value="FaqDtoData.Answer" />
+                <ValidationMessage For="@(() => FaqDtoData.Answer)" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="offset-md-2 col-md-2 d-grid">
+                <button type="submit" class="btn btn-primary">Spara</button>
+            </div>
+            <div class="col-md-2 d-grid">
+                <a class="btn btn-outline-primary" href="/Info">Avbryt</a>
+            </div>
+        </div>
+    </EditForm>
+</div>
 
 @if (faqs == null)
 {
-    <p><em>Laddar...</em></p>
+        <p><em>Laddar...</em></p>
 }
 else
 {
-    <div class="card">
-        <h3 class="m-3">Frågor och svar</h3>
-    <div id="faqAccordion" class="accordion">
-        @foreach (var faq in faqs)
-        {
-            <div class="d-flex flex-md-row align-items-stretch mb-3 w-100">
+        <div class="card">
+            <h3 class="m-3">Frågor och svar</h3>
+            <div id="faqAccordion" class="accordion">
+            @foreach (var faq in faqs)
+            {
+                        <div class="d-flex flex-md-row align-items-stretch mb-3 w-100">
+                            <div class="accordion-item flex-grow-1 rounded h-100" data-id="@faq.Id">
+                                <div class="accordion-header d-flex align-items-center" style="user-select:none;">
+                                    <div class="drag-handle me-2 bg-info-subtle rounded p-3"
+                                         style="cursor: grab; padding: 0 8px;"
+                            @onclick:stopPropagation
+                            @onmousedown:stopPropagation>
+                                        ☰
+                                    </div>
+                                    <button class="accordion-button collapsed flex-grow-1"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#collapse-@faq.Id"
+                                            aria-expanded="false"
+                                            aria-controls="collapse-@faq.Id">
+                                @faq.Question
+                                    </button>
+                                </div>
 
-                <!-- Accordion Item -->
-                <div class="accordion-item flex-grow-1 rounded h-100" data-id="@faq.Id">
-                    <div class="accordion-header d-flex align-items-center" style="user-select:none;">
-                        <div class="drag-handle me-2 bg-info-subtle rounded p-3"
-                        style="cursor: grab; padding: 0 8px;"
-                        @onclick:stopPropagation
-                        @onmousedown:stopPropagation>
-                            ☰
+                                <div id="collapse-@faq.Id"
+                                     class="accordion-collapse collapse"
+                                     aria-labelledby="heading-@faq.Id"
+                                     data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                @faq.Answer
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column">
+                                <button class="btn btn-sm btn-outline-warning mb-1 mb-md-0 me-md-1 ms-1"
+                                        title="Ändra"
+                                        @onclick="async () => await EditAlert(faq.Id)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger mb-1 mb-md-0 me-md-1 ms-1"
+                                        title="Ta bort"
+                                        @onclick="async () => await ShowRemoveAlert(faq.Id)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         </div>
-                        <button class="accordion-button collapsed flex-grow-1"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#collapse-@faq.Id"
-                        aria-expanded="false"
-                        aria-controls="collapse-@faq.Id">
-                            @faq.Question
-                        </button>
-                    </div>
-
-                    <div id="collapse-@faq.Id"
-                    class="accordion-collapse collapse"
-                    aria-labelledby="heading-@faq.Id"
-                    data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            @faq.Answer
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Buttons -->
-                <div class="d-flex flex-column">
-                    <button class="btn btn-sm btn-outline-warning mb-1 mb-md-0 me-md-1 ms-1"
-                    title="Ändra"
-                    @onclick="async () => await EditAlert(faq.Id)">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger mb-1 mb-md-0 me-md-1 ms-1"
-                    title="Ta bort"
-                    @onclick="async () => await ShowRemoveAlert(faq.Id)">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
+            }
             </div>
-        }
-    </div>
-    </div>
+        </div>
 }
 
-
-
-@inject IJSRuntime JS
-@inject SweetAlertService Swal
-@inject HttpClient Http
-@inject NavigationManager navManager
-@inject IFaqService FaqService
-
 @code {
-    int count = 0;
+    private QuillEditor? editor;
+    private string EditorHtml = "";
+    private List<Faq>? faqs;
     public FaqDto FaqDtoData { get; set; } = new();
     public JsonNode Errors { get; set; } = new JsonObject();
-
-    private List<Faq>? faqs;
-
     private bool sortableInitialized = false;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private IFaqService FaqService { get; set; } = default!;
+    [Inject] private SweetAlertService Swal { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -127,7 +129,7 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!sortableInitialized && faqs != null)
+        if (firstRender && faqs != null && !sortableInitialized)
         {
             sortableInitialized = true;
             var objRef = DotNetObjectReference.Create(this);
@@ -135,35 +137,41 @@ else
         }
     }
 
-    [JSInvokable]
-    public async Task UpdateOrder(string[] newOrder)
+    private async Task Save()
     {
-        Console.WriteLine("Updated Order: " + string.Join(",", newOrder));
+        if (editor is null)
+            return;
 
-        for (int i = 0; i < newOrder.Length; i++)
-        {
-            var id = int.Parse(newOrder[i]);
-            var faq = faqs.First(f => f.Id == id);
-            faq.Position = i;
-        }
-
-        // await Http.PutAsJsonAsync("api/Faqs/update-order", faqs);
-        await FaqService.UpdateFaqOrderAsync(faqs);
-    }
-
-    private async Task DeleteFaq(int id)
-    {
-        // await Http.DeleteAsync("api/Faqs/" + id);
-        // faqs = await Http.GetFromJsonAsync<List<Faq>>("api/Faqs");
-        await FaqService.RemoveFaqAsync(id);
-        faqs = await FaqService.GetFaqsAsync();
+        EditorHtml = await editor.GetHtml();
     }
 
     private async Task SaveFaq()
     {
         var createdFaq = await FaqService.AddFaqAsync(FaqDtoData);
         faqs.Add(createdFaq);
+        FaqDtoData = new FaqDto(); // Reset form
+        StateHasChanged();
     }
+
+    [JSInvokable]
+    public async Task UpdateOrder(string[] newOrder)
+    {
+        for (int i = 0; i < newOrder.Length; i++)
+        {
+            var id = int.Parse(newOrder[i]);
+            var faq = faqs.First(f => f.Id == id);
+            faq.Position = i;
+        }
+        await FaqService.UpdateFaqOrderAsync(faqs);
+    }
+
+    private async Task DeleteFaq(int id)
+    {
+        await FaqService.RemoveFaqAsync(id);
+        faqs = await FaqService.GetFaqsAsync();
+        StateHasChanged();
+    }
+
     private async Task EditAlert(int id)
     {
         var getFaq = await FaqService.GetFaqAsync(id);
@@ -171,36 +179,17 @@ else
 
         if (!string.IsNullOrEmpty(json))
         {
-            try
+            var faq = JsonSerializer.Deserialize<FaqDto>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            if (faq != null)
             {
-                var faq = JsonSerializer.Deserialize<FaqDto>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-
-                if (faq is null)
-                {
-                    await JS.InvokeVoidAsync("Swal.fire", "Fel", "Ogiltiga FAQ-data.", "error");
-                    return;
-                }
-
-                try
-                {
-                    await FaqService.EditFaqAsync(id, faq);
-
-                    await JS.InvokeVoidAsync("Swal.fire", "Lyckades", "FAQ ändrad!", "success");
-                    faqs = await FaqService.GetFaqsAsync();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error editing FAQ: {ex.Message}");
-                    await JS.InvokeVoidAsync("Swal.fire", "Fel", "Kunde inte spara FAQ.", "error");
-                }
-            }
-            catch (JsonException ex)
-            {
-                Console.WriteLine($"Error deserializing FAQ: {ex.Message}");
-                await JS.InvokeVoidAsync("Swal.fire", "Fel", "Kunde inte läsa FAQ-data.", "error");
+                await FaqService.EditFaqAsync(id, faq);
+                faqs = await FaqService.GetFaqsAsync();
+                StateHasChanged();
+                await JS.InvokeVoidAsync("Swal.fire", "Lyckades", "FAQ ändrad!", "success");
             }
         }
     }
@@ -215,9 +204,18 @@ else
                 ConfirmButtonText = "Ja, ta bort",
                 CancelButtonText = "Nej, ta inte bort",
             });
+
         if (result.IsConfirmed)
         {
             await DeleteFaq(id);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (editor != null)
+        {
+            await editor.DisposeAsync(); // Cleanly destroy Quill
         }
     }
 }

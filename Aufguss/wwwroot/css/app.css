@@ -9,6 +9,29 @@ h1{
     font-weight: bold;
 }
 
+/* Toolbar */
+.ql-toolbar {
+    border-radius: 8px 8px 0 0;
+    background: #f8f9fa;
+    border: 1px solid #ced4da;
+}
+
+/* Editor container */
+.ql-container {
+    border-radius: 0 0 8px 8px;
+    border: 1px solid #ced4da;
+    border-top: none;
+    background: white;
+}
+
+/* Text area */
+.ql-editor {
+    min-height: 200px;
+    padding: 1rem;
+    font-size: 1rem;
+    background-color: #ffffff;
+}
+
 .card {
     background: rgba(252, 248, 235, 0.96);
     border-radius: 20px;

@@ -10,12 +10,12 @@
     }
     else
     {
-        <div class="card mb-5">
+        @* <div class="card mb-5"> *@
 
         
-        <h3 class="m-2 mb-5">Användare</h3>
-        <div class="table-rounded">
-        <table class="table table-info">
+        <h3 class="m-2">Användare</h3>
+        <div class="table-rounded mb-5">
+            <table class="table table-info">
             <thead>
                 <tr>
                     <!-- ID -->
@@ -105,7 +105,7 @@
             </tbody>
         </table>
         </div>
-        </div>
+        @* </div> *@
     }
 
     @if (AdminUsers == null)
@@ -114,14 +114,14 @@
     }
     else
     {
-        <div class="card">
+        @* <div class="card"> *@
 
 
-            <h3 class="m-2 mb-5"> Administratörer </h3>
+            <h3 class="m-2"> Administratörer </h3>
         <div class="table-rounded">
         
 
-        <table class="table table-info">
+            <table class="table table-info mb-5">
             <thead>
                 <tr>
                     <th class="col-id">ID</th>
@@ -193,7 +193,7 @@
             </tbody>
         </table>
             </div>
-        </div>
+        @* </div> *@
     }
 
     @* <a href="/CreateAdmin" class="btn btn-primary">Lägg till administratör</a> *@

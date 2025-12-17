@@ -1,0 +1,23 @@
+﻿@page "/TestEditor"
+@using Aufguss.Models
+@inject IJSRuntime JS
+@inject IFaqService FaqService
+
+<h3>Create FAQ</h3>
+
+<QuillEditor @ref="editor" />
+
+<button class="btn btn-primary mt-2" @onclick="Save">Save</button>
+
+@code {
+    private QuillEditor? editor;
+
+    private async Task Save()
+    {
+        if (editor != null)
+        {
+            var html = await editor.GetHtml();
+            Console.WriteLine(html);
+        }
+    }
+}
