@@ -22,6 +22,13 @@
         return this.editors[id]?.root.innerHTML ?? "";
     },
 
+    setHtml: function (id, html) {
+        const quill = this.editors[id];
+        if (!quill) return;
+
+        quill.clipboard.dangerouslyPasteHTML(html);
+    },
+
     destroy: function (id) {
         const quill = this.editors[id];
         if (!quill) return;

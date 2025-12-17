@@ -4,15 +4,27 @@
 <div id="@EditorId" style="height:300px;"></div>
 
 @code {
+    [Parameter] public string? Html { get; set; }
+
     private string EditorId = "quill-" + Guid.NewGuid();
     private bool _initialized;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!_initialized)
+        if (firstRender)
         {
-            _initialized = true;
             await JS.InvokeVoidAsync("quillInterop.create", EditorId);
+
+            if (!string.IsNullOrWhiteSpace(Html))
+            {
+                await JS.InvokeVoidAsync(
+                    "quillInterop.setHtml",
+                    EditorId,
+                    Html
+                );
+            }
+
+            _initialized = true;
         }
     }
 
@@ -21,9 +33,6 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (!string.IsNullOrEmpty(EditorId))
-        {
-            await JS.InvokeVoidAsync("quillInterop.destroy", EditorId);
-        }
+        await JS.InvokeVoidAsync("quillInterop.destroy", EditorId);
     }
 }

@@ -44,6 +44,7 @@ public class Program
             builder.Services.AddScoped<ISettingsService, DemoSettingsService>();
             builder.Services.AddScoped<ITemplateService, DemoTemplateService>();
             builder.Services.AddScoped<IImageService, DemoImageService>();
+            builder.Services.AddScoped<IAboutService, DemoAboutService>();
         }
         else
         {
