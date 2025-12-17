@@ -1,35 +1,43 @@
 ﻿@using Aufguss.Models
 @using Aufguss.Services.Interface
+@inject IAboutService AboutService
+
 
 @page "/About"
 
 <div class="card m-2 card-width mt-5">
-    <h2 class="ms-5 fw-bold">Om Aufguss</h2>
-    <div class="card-body  rounded rounded-5">
-        @if (!string.IsNullOrEmpty(fileLocation))
-        {
-            @* <img src="@($"{fileLocation}aufguss 2.jpg")" *@
-            <img src="images/aufguss.jpg" alt="Aufguss"
-                 class="img-fluid float-start me-3 mb-2 p-4 rounded rounded-5"
-                 style="max-width: 50vw;" />
-        }
+    <h2 class="ms-3 fw-bold">Om Aufguss</h2>
+    <div class="card-body rounded rounded-5">
+        <div class="row align-items-start">
+            @if (!string.IsNullOrEmpty(fileLocation))
+            {
+                <div class="col-12 col-md-6 mb-3 mb-md-0">
+                    <img src="images/aufguss.jpg" alt="Aufguss"
+                         class="img-fluid rounded rounded-5 w-100" />
+                </div>
+            }
 
-        <p class="card-text p-4">
-            Relax i bastu med härliga dofter och svepande värme. Flera tillfällen under året bjuder vi in till aufguss i vår sköna bastu.
-            <br /><br />
-            <strong>För dig som bastar:</strong><br />
-            - Inga badkläder i bastun<br />
-            - Sitt på egen handduk<br />
-            - Duscha innan du går in i bastun<br />
-            - Tänk på att dricka vatten<br />
-            <br />
-            Aufguss är en tysk bastukultur som letat sig in i Sverige under senare tid. Ordet betyder ungefär "hälla på". En bastuvärd häller på underbart väldoftande eteriska oljor och vatten över heta stenar. Värmen viftas sedan omkring så att den mjukt sprider sig i bastun. <br /><br />
-            En vanlig sittning brukar vara mellan 5 och 15 minuter och har ofta olika teman. Flera tillfällen under året bjuder vi in till aufguss i vår sköna bastu, en härlig avkoppling till olika dofter. Vi använder eteriska oljor som har olika bra egenskaper för kropp och sinne.<br /><br />
-
-            Medtag egen vattenflaska och drick ordentligt både innan, under tiden och efteråt då du svettas ut mycket vätska. Aufguss ingår i priset för bad- och gym-kort.
-        </p>
+            <div class="col-12 col-md-6">
+                @((MarkupString)EditorHtml)
+                @* <p class="card-text">
+                    Relax i bastu med härliga dofter och svepande värme. Flera tillfällen under året bjuder vi in till aufguss i vår sköna bastu.
+                    <br /><br />
+                    <strong>För dig som bastar:</strong><br />
+                    - Inga badkläder i bastun<br />
+                    - Sitt på egen handduk<br />
+                    - Duscha innan du går in i bastun<br />
+                    - Tänk på att dricka vatten<br />
+                    <br />
+                    Aufguss är en tysk bastukultur som letat sig in i Sverige under senare tid. Ordet betyder ungefär "hälla på". En bastuvärd häller på underbart väldoftande eteriska oljor och vatten över heta stenar. Värmen viftas sedan omkring så att den mjukt sprider sig i bastun. <br /><br />
+                    En vanlig sittning brukar vara mellan 5 och 15 minuter och har ofta olika teman. Flera tillfällen under året bjuder vi in till aufguss i vår sköna bastu, en härlig avkoppling till olika dofter. Vi använder eteriska oljor som har olika bra egenskaper för kropp och sinne.<br /><br />
+                    Medtag egen vattenflaska och drick ordentligt både innan, under tiden och efteråt då du svettas ut mycket vätska. Aufguss ingår i priset för bad- och gym-kort.
+                </p> *@
+            </div>
+        </div>
     </div>
 </div>
+
+
 
 <br />
 <br />
@@ -86,6 +94,7 @@ else
 @inject IFaqService FaqService
 
 @code {
+    private string EditorHtml = "";
     private string fileLocation = string.Empty;
 
     private List<Faq>? faqs;
@@ -94,5 +103,7 @@ else
     {
         faqs = await FaqService.GetFaqsAsync();
         fileLocation = new Uri(Http.BaseAddress, "api/upload/").ToString();
+        var about = await AboutService.GetHTMLAsync();
+        EditorHtml = about.EditorHtml ?? string.Empty;
     }
 }
