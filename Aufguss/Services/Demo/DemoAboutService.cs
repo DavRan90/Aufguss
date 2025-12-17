@@ -2,6 +2,7 @@
 using Aufguss.Pages;
 using Aufguss.Pages.Bookings;
 using Aufguss.Services.Interface;
+using Ganss.Xss;
 using System.Xml.Linq;
 using About = Aufguss.Models.About;
 
@@ -11,14 +12,16 @@ namespace Aufguss.Services.Demo
     {
         private SiteSettings _settings;
         private About _about;
-        
+        private readonly IHtmlSanitizerService _sanitizer;
+
         private readonly IEventService _eventService;
 
 
-        public DemoAboutService(IEventService eventService)
+        public DemoAboutService(IEventService eventService, IHtmlSanitizerService sanitizer)
         {
             _settings = null;
             _eventService = eventService;
+            _sanitizer = sanitizer;
 
             _about = new()
             {
@@ -52,7 +55,9 @@ namespace Aufguss.Services.Demo
 
         public Task EditAboutAsync(string editAbout)
         {
-            _about.EditorHtml = editAbout;
+            var safeHtml = _sanitizer.Sanitize(editAbout);
+
+            _about.EditorHtml = safeHtml;
 
             return Task.CompletedTask;
         }

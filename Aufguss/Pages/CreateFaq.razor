@@ -149,10 +149,7 @@ else
             return;
 
         EditorHtml = await editor.GetHtml();
-
         await AboutService.EditAboutAsync(EditorHtml);
-        
-
     }
 
     private async Task SaveFaq()

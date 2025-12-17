@@ -63,6 +63,8 @@ public class Program
         }
         //builder.Services.AddScoped<BlazoredTextEditor>();
         builder.Services.AddScoped<Services.AuthorizationMessageHandler>();
+        builder.Services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
+
 
         builder.Services.AddHttpClient("AuthenticatedClient", client =>
         {
