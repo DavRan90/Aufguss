@@ -228,10 +228,10 @@ else
                 ID = evt.Id,
                 Caption = (evt.Gender, evt.Hidden) switch
                 {
-                    (Gender.Male, false) => "Herrar",
-                    (Gender.Female, false) => "Damer",
-                    (Gender.Male, true) => "Herrar", // Om jag behöver ett scenario för dolda
-                    (Gender.Female, true) => "Damer", // Om jag behöver ett scenario för dolda
+                    (Gender.Male, false) => "Herr",
+                    (Gender.Female, false) => "Dam",
+                    (Gender.Male, true) => "Herr", // Om jag behöver ett scenario för dolda
+                    (Gender.Female, true) => "Dam", // Om jag behöver ett scenario för dolda
                     _ => "lightgray"
                 },
                 DateStart = evt.Start,

@@ -67,9 +67,9 @@ else
 {
     foreach (var entry in entries)
     {
-        <div class="card mb-5">
-            <h2 class="card-header">@entry.Title</h2>
-            <img class="card-img-top" src="@entry.Image" />
+        <div class="card mb-5 p-3">
+            <h2 class="m-4">@entry.Title</h2>
+            <img class="card-img-top p-4 rounded rounded-5" src="@entry.Image" />
             <div class="card-body">
                 <p class="card-text linebreak">@entry.Description</p>
                 @if (!string.IsNullOrEmpty(entry.Url))

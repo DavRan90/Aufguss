@@ -227,7 +227,7 @@ else
             .Select(be => new BlazorCalendar.Models.Tasks
                 {
                     ID = be.Booking.Id,
-                    Caption = be.Booking.Reserve ? "? Reserv" : "✓ Inbokad",
+                    Caption = be.Booking.Reserve ? "Reserv" : "Bokad",
                     DateStart = be.Event.Start,
                     DateEnd = be.Event.End ?? be.Event.Start,
                     Color = be.Booking.Reserve

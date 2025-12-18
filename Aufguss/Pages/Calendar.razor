@@ -5,7 +5,7 @@
     <div class="d-flex justify-content-center align-items-center">
         <button class="btn btn-primary m-3" @onclick="() => ChangeMonth(-1)">←</button>
         <h3 class="mx-2 text-center" style="width: 15ch;">
-            @FirstDate.ToString("MMMM yyyy")
+            @Capitalize(FirstDate.ToString("MMMM yyyy"))
         </h3>
         <button class="btn btn-primary m-3" @onclick="() => ChangeMonth(1)">→</button>
     </div>
@@ -46,6 +46,12 @@
     public EventCallback<ClickEmptyDayParameter> OnDayClick { get; set; }
 
     private DateTime FirstDate { get; set; } = DateTime.Today;
+
+    private string Capitalize(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+        return char.ToUpper(input[0]) + input.Substring(1);
+    }
 
     private void ChangeMonth(int offset)
     {
