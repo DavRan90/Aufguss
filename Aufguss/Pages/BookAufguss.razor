@@ -98,24 +98,8 @@ else
     }
     else
     {
-        <div class="card">
-        <div class="d-flex justify-content-center align-items-center">
-            <button class="btn btn-primary m-3" @onclick="@(() => ChangeMonth(-1))">←</button>
-            <h3 class="mx-2 text-center" style="width: 15ch;">@FirstDate.ToString("MMMM yyyy")</h3>
-            <button class="btn btn-primary m-3" @onclick="@(() => ChangeMonth(1))">→</button>
-        </div>
-
-        <CalendarContainer TasksList="@ModelTasks" DisplayedView="DisplayedView.Monthly" FirstDate="@FirstDate">
-            
-            <MonthlyView TaskClick="OnTaskClick" SaturdayColor="White" SundayColor="White" HighlightToday />
-        </CalendarContainer>
-
-        @* <p class="btn btn-sm bg-primary-subtle mt-2">Herrar</p>
-        <p class="btn btn-sm bg-danger-subtle mt-2">Damer</p>
-        <p class="btn btn-sm bg-warning-subtle mt-2">Fullbokat</p>
-        <p class="btn btn-sm bg-body-secondary mt-2">Passerat</p>
-        <p class="btn btn-sm border border-2 border-danger mt-2">Idag</p> *@
-        </div>
+        <Calendar Tasks="ModelTasks"
+                  OnEventClick="HandleCalendarEventClick"/>
     }
 }
 
@@ -267,19 +251,8 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnTaskClick(ClickTaskParameter clickInfo)
+    private void HandleCalendarEventClick(int eventId)
     {
-        var task = clickInfo.IDList;
-        // var booking = await Http.GetFromJsonAsync<Event>($"api/Events/{task[0]}");
-        var booking = await EventService.GetEventByIdAsync(task[0]);
-        if (booking.Start > DateTime.Now)
-        {
-            NavManager.NavigateTo($"/BokaAufguss/Book/{task[0]}");
-        }
-        else
-        {
-            await JSRuntime.InvokeVoidAsync("Swal.fire", "För sent", "Passet har redan start!", "error");
-        }
-
+        NavManager.NavigateTo($"/BokaAufguss/Book/{eventId}");
     }
 }

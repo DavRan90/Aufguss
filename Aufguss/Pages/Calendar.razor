@@ -1,0 +1,76 @@
+﻿@using BlazorCalendar
+@using BlazorCalendar.Models
+
+<div class="card m-2 mt-5">
+    <div class="d-flex justify-content-center align-items-center">
+        <button class="btn btn-primary m-3" @onclick="() => ChangeMonth(-1)">←</button>
+        <h3 class="mx-2 text-center" style="width: 15ch;">
+            @FirstDate.ToString("MMMM yyyy")
+        </h3>
+        <button class="btn btn-primary m-3" @onclick="() => ChangeMonth(1)">→</button>
+    </div>
+
+    <CalendarContainer TasksList="Tasks"
+                       DisplayedView="DisplayedView.Monthly"
+                       FirstDate="FirstDate">
+
+        <MonthlyView TaskClick="HandleTaskClick"
+                     Draggable
+                     DragStart="HandleDragStart"
+                     DropTask="HandleDragDrop"
+                     DayClick="HandleDayClick"
+                     SaturdayColor="White"
+                     SundayColor="White" />
+    </CalendarContainer>
+
+    <div class="mt-2">
+        <span class="btn btn-sm bg-primary-subtle me-1">Herrar</span>
+        <span class="btn btn-sm bg-danger-subtle me-1">Damer</span>
+        <span class="btn btn-sm bg-warning-subtle me-1">Fullbokat</span>
+        <span class="btn btn-sm bg-dark-subtle">Dold</span>
+    </div>
+</div>
+
+
+@code {
+    [Parameter, EditorRequired]
+    public Tasks[] Tasks { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<int> OnEventClick { get; set; }
+
+    [Parameter]
+    public EventCallback<DragDropParameter> OnEventDrop { get; set; }
+
+    [Parameter]
+    public EventCallback<ClickEmptyDayParameter> OnDayClick { get; set; }
+
+    private DateTime FirstDate { get; set; } = DateTime.Today;
+
+    private void ChangeMonth(int offset)
+    {
+        FirstDate = FirstDate.AddMonths(offset);
+    }
+
+    private async Task HandleTaskClick(ClickTaskParameter info)
+    {
+        if (info.IDList?.Any() == true)
+            await OnEventClick.InvokeAsync(info.IDList[0]);
+    }
+
+    private Task HandleDragStart(DragDropParameter info)
+    {
+        // Optional: expose later
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleDragDrop(DragDropParameter info)
+    {
+        await OnEventDrop.InvokeAsync(info);
+    }
+
+    private async Task HandleDayClick(ClickEmptyDayParameter info)
+    {
+        await OnDayClick.InvokeAsync(info);
+    }
+}

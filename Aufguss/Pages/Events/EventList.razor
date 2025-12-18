@@ -123,27 +123,11 @@ else
     }
     else
     {
-        <div class="card m-2 mt-5">
-        <div class="d-flex justify-content-center align-items-center">
-            <button class="btn btn-primary m-3" @onclick="@(() => ChangeMonth(-1))">←</button>
-            <h3 class="mx-2 text-center" style="width: 15ch;">@FirstDate.ToString("MMMM yyyy")</h3>
-            <button class="btn btn-primary m-3" @onclick="@(() => ChangeMonth(1))">→</button>
-        </div>
+        <Calendar Tasks="ModelTasks"
+                OnEventClick="HandleCalendarEventClick"
+                OnEventDrop="HandleCalendarEventDrop"
+                OnDayClick="HandleCalendarDayClick" />
 
-        <CalendarContainer TasksList="@ModelTasks" DisplayedView="DisplayedView.Monthly" FirstDate="@FirstDate">
-            <MonthlyView TaskClick="OnTaskClick"
-                         Draggable DragStart="OnDragStart"
-                         DropTask="OnDragDrop"
-                         DayClick="OnDayClick"
-                         SaturdayColor="White"
-                         SundayColor="White" />
-        </CalendarContainer>
-
-        <p class="btn btn-sm bg-primary-subtle mt-2">Herrar</p>
-        <p class="btn btn-sm bg-danger-subtle mt-2">Damer</p>
-        <p class="btn btn-sm bg-warning-subtle mt-2">Fullbokat</p>
-        <p class="btn btn-sm bg-dark-subtle mt-2">Dold</p>
-        </div>
     }
 
 
@@ -180,8 +164,6 @@ else
 
     private async Task LoadEventsAsync()
     {
-        // evts = await Http.GetFromJsonAsync<List<Event>>("api/Events/admin");
-        // bookings = await Http.GetFromJsonAsync<List<Booking>>("api/Bookings");
         evts = await EventService.GetEventsAsync();
         bookings = await BookingService.GetBookingsAsync();
 
@@ -194,10 +176,10 @@ else
                 ID = evt.Id,
                 Caption = (evt.Gender, evt.Hidden) switch
                 {
-                    (Gender.Male, false) => "Herrar",
-                    (Gender.Female, false) => "Damer",
-                    (Gender.Male, true) => "Herrar", // Om jag behöver ett scenario för dolda
-                    (Gender.Female, true) => "Damer", // Om jag behöver ett scenario för dolda
+                    (Gender.Male, false) => "Herr",
+                    (Gender.Female, false) => "Dam",
+                    (Gender.Male, true) => "Herr", // Om jag behöver ett scenario för dolda
+                    (Gender.Female, true) => "Dam", // Om jag behöver ett scenario för dolda
                     _ => "lightgray"
                 },
                 DateStart = evt.Start,
@@ -217,63 +199,42 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnTaskClick(ClickTaskParameter clickInfo)
+    private void HandleCalendarEventClick(int eventId)
     {
-        var task = clickInfo.IDList;
-        NavManager.NavigateTo($"/Events/Edit/{task[0]}");
+        NavManager.NavigateTo($"/Events/Edit/{eventId}");
     }
 
-    private Task OnDragStart(DragDropParameter dragStartInfo)
+    private async Task HandleCalendarEventDrop(DragDropParameter dropInfo)
     {
-        // Capture the ID of the dragged task (first one if multiple)
-        if (dragStartInfo.taskID != 0)
-        {
-            Console.WriteLine($"Drag started for task ID: {dragStartInfo.taskID}");
-        }
+        if (ModelTasks is null || evts is null)
+            return;
 
-        return Task.CompletedTask;
+        var task = ModelTasks.FirstOrDefault(t => t.ID == dropInfo.taskID);
+        var evt = evts.FirstOrDefault(e => e.Id == dropInfo.taskID);
+
+        if (task is null || evt is null)
+            return;
+
+        task.DateStart = dropInfo.Day.Date + task.DateStart.TimeOfDay;
+        task.DateEnd = task.DateStart;
+
+        evt.Start = task.DateStart;
+
+        await EventService.EditEventAsync(evt.Id, new EventDto
+            {
+                Title = evt.Title,
+                Description = evt.Description,
+                Start = evt.Start,
+                End = evt.End,
+                MaxSlots = evt.MaxSlots,
+                Gender = evt.Gender,
+                Hidden = evt.Hidden
+            });
     }
 
-    private async Task OnDragDrop(DragDropParameter dropInfo)
+    private async Task HandleCalendarDayClick(ClickEmptyDayParameter day)
     {
-        if (dropInfo.taskID != 0 && ModelTasks is not null && evts is not null)
-        {
-            // Update the calendar task visually
-            var task = ModelTasks.FirstOrDefault(t => t.ID == dropInfo.taskID);
-            if (task != null)
-            {
-                task.DateStart = dropInfo.Day.Date + task.DateStart.TimeOfDay;
-                task.DateEnd = dropInfo.Day.Date + task.DateEnd.TimeOfDay;
-            }
-
-            // Find the corresponding event object (used for the API)
-            var evt = evts.FirstOrDefault(e => e.Id == dropInfo.taskID);
-            if (evt != null)
-            {
-                evt.Start = dropInfo.Day.Date + evt.Start.TimeOfDay;
-
-                try
-                {
-                    var response = await Http.PutAsJsonAsync($"api/Events/{evt.Id}", evt);
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        Console.WriteLine($"Failed to update event {evt.Id}: {response.StatusCode}");
-                        // Optional: revert task if you want to undo on failure
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Event {evt.Id} updated successfully.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error updating event: {ex.Message}");
-                }
-            }
-
-            await InvokeAsync(StateHasChanged); // Refresh UI
-        }
+        await OnDayClick(day);
     }
 
     private async Task OnDayClick(ClickEmptyDayParameter clickedDate)
@@ -291,7 +252,7 @@ else
                         PropertyNameCaseInsensitive = true
                     };
 
-                options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)); // OR use `null` for PascalCase
+                options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 
                 var newEvent = JsonSerializer.Deserialize<EventDto>(json, options);
                 var response = await Http.PostAsJsonAsync("api/Events", newEvent);
@@ -346,9 +307,6 @@ else
         }
     }
 
-
-
-
     public JsonNode Errors { get; set; } = new JsonObject();
 
     [Parameter]
@@ -369,14 +327,8 @@ else
         }
     }
 
-    // public int StartDay { get; set; } = 1;
-
-
-
     private async Task DeleteEvent(int id)
     {
-        // await Http.DeleteAsync("api/Events/" + id);
-        // evts = await Http.GetFromJsonAsync<List<Event>>("api/Events");
         await EventService.RemoveEventAsync(id);
         evts = await EventService.GetEventsAsync();
         await LoadEventsAsync();
@@ -412,7 +364,6 @@ else
             evt.Hidden = false;
         }
 
-        // 🟡 Create the DTO from the event
         var eventDto = new EventDto
             {
                 Title = evt.Title,
@@ -425,36 +376,11 @@ else
                 Gender = evt.Gender,
                 AllowFriendBooking = evt.AllowFriendBooking,
                 Hidden = evt.Hidden
-            // Include any other matching properties
             };
 
-        // 🟢 Send the DTO instead of the full Event model
         await EventService.EditEventAsync(id, eventDto);
-
-        // var response = await Http.PutAsJsonAsync("api/Events/" + id, evt);
-
-
-        // if (response.IsSuccessStatusCode)
-        // {
-        //     await LoadEventsAsync();
-        // }
-
-        // else
-        // {
-        //     var strResponse = await response.Content.ReadAsStringAsync();
-        //     Console.WriteLine("Json Response: \n" + strResponse);
-
-        //     try
-        //     {
-        //         var jsonResponse = JsonNode.Parse(strResponse);
-        //         Errors = jsonResponse?["errors"] ?? new JsonObject();
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Console.WriteLine("Exception: " + ex.Message);
-        //     }
-        // }
     }
+
     public int SpotsRemaining(int evtId)
     {
         if (evts == null || bookings == null)

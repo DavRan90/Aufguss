@@ -95,24 +95,8 @@ else
     }
     else
     {
-        @*     <p>Visa Veckovy</p>
-    <input type="checkbox" @bind="ShowWeek" />
-    <p></p>
-    <p></p> *@
-    <div class="card">
-        <div class="d-flex justify-content-center align-items-center">
-            <button class="btn btn-primary m-3" @onclick="@(() => ChangeMonth(-1))">←</button>
-            <h3 class="mx-2 text-center" style="width: 15ch;">@FirstDate.ToString("MMMM yyyy")</h3>
-            <button class="btn btn-primary m-3" @onclick="@(() => ChangeMonth(1))">→</button>
-        </div>
-        <CalendarContainer TasksList="@ModelTasks" DisplayedView="ShowWeek ? DisplayedView.Weekly : DisplayedView.Monthly" FirstDate="@FirstDate">
-            <MonthlyView SaturdayColor="White"
-            SundayColor="White" />
-
-            <WeekView SaturdayColor="White"
-            SundayColor="White" />
-        </CalendarContainer>
-        </div>
+        <Calendar Tasks="ModelTasks"
+                OnEventClick="HandleCalendarEventClick" />
     }
 }
 
@@ -174,23 +158,18 @@ else
     private List<Event>? events;
     private List<Booking>? bookings;
     private List<DisplayBooking>? extendedBookings;
-    // private List<Event>? eventsBooked;
 
     protected override async Task OnInitializedAsync()
     {
         extendedBookings = new();
-        // Users = await Http.GetFromJsonAsync<List<UserWithRolesDto>>("api/auth/users");
         Users = await UserService.GetUsersAsync();
-        // var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var authState = await AuthService.GetAuthenticationStateAsync();
         var loggedInUser = authState.User;
         var userIdString = loggedInUser.FindFirst("sub")?.Value;
 
         CurrentUser = Users?.Where(u => u.Id == userIdString).SingleOrDefault();
 
-        // var allEvents = await Http.GetFromJsonAsync<List<Event>>("api/Events");
         var allEvents = await EventService.GetEventsAsync();
-        // bookings = await Http.GetFromJsonAsync<List<Booking>>("api/Bookings");
         bookings = await BookingService.GetBookingsAsync();
         events = (from b in bookings
                   join e in allEvents on b.EventId equals e.Id
@@ -247,7 +226,7 @@ else
         ModelTasks = userBookingsWithEvents
             .Select(be => new BlazorCalendar.Models.Tasks
                 {
-                    ID = be.Event.Id,
+                    ID = be.Booking.Id,
                     Caption = be.Booking.Reserve ? "? Reserv" : "✓ Inbokad",
                     DateStart = be.Event.Start,
                     DateEnd = be.Event.End ?? be.Event.Start,
@@ -264,6 +243,10 @@ else
             .ToArray();
     }
 
+    private void HandleCalendarEventClick(int eventId)
+    {
+        NavManager.NavigateTo($"/Booking/{eventId}");
+    }
 
 
     private async Task ShowAlert(DisplayBooking evt)
@@ -285,8 +268,6 @@ else
     private async Task DeleteBooking(int id)
     {
         var bookingToRemove = bookings.Where(b => b.EventId == id && b.Email == CurrentUser.Email && b.Unbooked == false).SingleOrDefault();
-        // await Http.DeleteAsync("api/Bookings/" + bookingToRemove.Id);
-        // bookings = await Http.GetFromJsonAsync<List<Booking>>("api/Bookings");
         await BookingService.UnbookAsync(bookingToRemove.Id);
         bookings = await BookingService.GetBookingsAsync();
         await JSRuntime.InvokeVoidAsync("Swal.fire", "Avbokad", "Du är nu avbokad från passet", "success");
