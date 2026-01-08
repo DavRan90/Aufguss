@@ -13,9 +13,9 @@ namespace Aufguss.Services
             var identity = new ClaimsIdentity(new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, "demo-user-id"),
-            new Claim(JwtRegisteredClaimNames.Email, "demo@demo.com"),
+            new Claim(JwtRegisteredClaimNames.Email, "demo@user.com"),
             new Claim(JwtRegisteredClaimNames.PhoneNumber, "+46701234567"),
-            new Claim("fullName", "Demo Changed"),
+            new Claim("fullName", "Demo User"),
             new Claim("firstName", "Demo"),
             new Claim("gender", "Male"),
             new Claim("friendId", "demo-friend-id"),
@@ -31,7 +31,7 @@ namespace Aufguss.Services
             var identity = new ClaimsIdentity(new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, "demo-user-id"),
-            new Claim(JwtRegisteredClaimNames.Email, "demo@demo.com"),
+            new Claim(JwtRegisteredClaimNames.Email, "demo@user.com"),
             new Claim(JwtRegisteredClaimNames.PhoneNumber, "+46701234567"),
             new Claim("fullName", "Demo User"),
             new Claim("firstName", "Demo"),
@@ -49,7 +49,7 @@ namespace Aufguss.Services
             var identity = new ClaimsIdentity(new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, "demo-user-id"),
-            new Claim(JwtRegisteredClaimNames.Email, "demo@demo.com"),
+            new Claim(JwtRegisteredClaimNames.Email, "demo@admin.com"),
             new Claim(JwtRegisteredClaimNames.PhoneNumber, "+46701234567"),
             new Claim("fullName", "Demo Admin"),
             new Claim("firstName", "Demo"),

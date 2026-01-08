@@ -27,7 +27,7 @@ namespace Aufguss.Services.Demo
                 Id = 0,
                 Name = "Demo",
                 UserId = "demo-user-id",
-                Email = "demo@demo.com",
+                Email = "demo@user.com",
                 Tel = "0701234567",
                 BookedAt = DateTime.Now,
                 Unbooked = true,
@@ -37,7 +37,7 @@ namespace Aufguss.Services.Demo
             new Booking {
                 Id = 1,
                 Name = "Demo",
-                Email = "demo@demo.com",
+                Email = "demo@user.com",
                 UserId = "demo-user-id",
                 Tel = "0701234567",
                 BookedAt = DateTime.Now,
